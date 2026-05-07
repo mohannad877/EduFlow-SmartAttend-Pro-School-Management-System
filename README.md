@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/school.svg" alt="EduFlow Logo" width="100" />
+  <img src="assets/images/app_icon.png" alt="EduFlow Logo" width="120" />
   
   # 🧠 EduFlow SmartAttend Pro
   
