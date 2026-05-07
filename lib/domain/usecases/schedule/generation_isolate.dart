@@ -1,0 +1,47 @@
+import 'dart:isolate';
+import 'package:school_schedule_app/domain/entities/enums.dart';
+
+import 'package:school_schedule_app/domain/usecases/algorithm/intelligent_schedule_generator.dart';
+import 'package:school_schedule_app/domain/usecases/algorithm/schedule_validator.dart';
+
+class IsolateGenerationRequest {
+  final int dailySessions;
+  final List<WorkDay> workDays;
+  final List<String>? targetClassroomIds;
+  final GenerationMode mode;
+  final GenerationConfig config;
+  final GenerationData data;
+
+  IsolateGenerationRequest({
+    required this.dailySessions,
+    required this.workDays,
+    this.targetClassroomIds,
+    required this.mode,
+    required this.config,
+    required this.data,
+  });
+}
+
+Future<GenerationResult> runGenerationOptimizationInIsolate(IsolateGenerationRequest request) async {
+  return await Isolate.run(() async {
+    // 1️⃣ إنشاء مثيل معزول للمولد (بدون مخازن بيانات)
+    final validator = ScheduleValidator();
+    // تمرير null للمخازن لأننا سنستخدم generateScheduleFromData
+    final generator = IntelligentScheduleGenerator(
+      null, null, null, null, validator
+    );
+
+    // 2️⃣ تشغيل الخوارزمية الثقيلة داخل عملية Isolate
+    return await generator.generateScheduleFromData(
+      dailySessions: request.dailySessions,
+      workDays: request.workDays,
+      targetClassroomIds: request.targetClassroomIds,
+      mode: request.mode,
+      config: request.config.copyWith(
+        // إزالة مستمع التقدم لأنه لا ينتقل عبر الـ Isolate بسهولة
+        onProgress: null,
+      ),
+      data: request.data,
+    );
+  });
+}
