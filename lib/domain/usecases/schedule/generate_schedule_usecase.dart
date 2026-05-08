@@ -1,5 +1,4 @@
 import 'package:school_schedule_app/core/utils/l10n_extension.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 // ============================================================================
 // 📦 الملف: generate_schedule_use_case.dart
 // 🎯 الوصف: حالة استخدام توليد الجداول الدراسية - طبقة التطبيق (Application Layer)
@@ -29,7 +28,7 @@ import 'package:school_schedule_app/domain/repositories/i_classroom_repository.d
 // 🧠 الاستيراد من طبقة الخوارزمية
 import '../algorithm/intelligent_schedule_generator.dart' as algo;
 import '../algorithm/intelligent_schedule_generator.dart' 
-  show GenerationConfig, GenerationProgress, QualityGrade, UnassignedSlot, GenerationData;
+  show GenerationConfig, GenerationProgress;
 import 'package:school_schedule_app/core/utils/cancellation_token.dart';
 
 // 📡 الاستيراد من طبقة الأحداث والخدمات

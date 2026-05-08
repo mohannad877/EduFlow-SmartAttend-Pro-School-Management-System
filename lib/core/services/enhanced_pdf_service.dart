@@ -150,7 +150,7 @@ class EnhancedPdfService {
       DateTime.thursday: AppNavigator.navigatorKey.currentContext!.l10n.thursday,
       DateTime.friday: AppNavigator.navigatorKey.currentContext!.l10n.friday,
     };
-    final dayNames = localizedDayNames ?? defaultDayNames;
+    // final dayNames = localizedDayNames ?? defaultDayNames;
 
     // Define table headers
     final headers = [dayLabel, AppNavigator.navigatorKey.currentContext!.l10n.settings, AppNavigator.navigatorKey.currentContext!.l10n.section, AppNavigator.navigatorKey.currentContext!.l10n.help, AppNavigator.navigatorKey.currentContext!.l10n.grade];

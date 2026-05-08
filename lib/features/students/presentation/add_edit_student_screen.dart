@@ -402,7 +402,7 @@ class _AddEditStudentScreenState extends ConsumerState<AddEditStudentScreen> {
 
     if (confirmed == true) {
       final repo = ref.read(studentRepositoryProvider);
-      final newBarcode = await repo.regenerateBarcode(widget.student!.id);
+      // final newBarcode = await repo.regenerateBarcode(widget.student!.id);
       if (mounted) AppSnackBar.show(context, message: context.l10n.studentDeleted2, type: SnackBarType.success);
     }
   }

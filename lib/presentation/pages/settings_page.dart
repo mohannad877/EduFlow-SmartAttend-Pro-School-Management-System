@@ -1,7 +1,6 @@
 import 'package:school_schedule_app/core/theme/app_spacing.dart';
 import 'package:school_schedule_app/core/app_snack_bars.dart';
 import 'package:school_schedule_app/core/utils/l10n_extension.dart';
-import 'package:school_schedule_app/core/theme/app_colors.dart';
 import 'package:school_schedule_app/core/widgets/premium_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

@@ -187,9 +187,11 @@ class _AttendanceSessionScreenState extends ConsumerState<AttendanceSessionScree
         _isSaving = false;
       });
       await _loadStudentsForAttendance();
+      if (!mounted) return;
       AppSnackBar.show(context, message: context.l10n.searchResults, type: SnackBarType.success);
     } catch (e) {
       setState(() => _isSaving = false);
+      if (!mounted) return;
       AppSnackBar.show(context, message: context.l10n.noSearchResults, type: SnackBarType.error);
     }
   }

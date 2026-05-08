@@ -499,12 +499,14 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
     final filter = ref.read(currentStudentFilterProvider);
     final students = await ref.read(filteredStudentsProvider(filter).future);
     
+    if (!mounted) return;
     if (students.isEmpty) {
       _showSnackbar(context.l10n.auto_key_1793);
       return;
     }
 
     final path = await AttendanceExcelService.exportStudentsList(students);
+    if (!mounted) return;
     if (path != null) {
       _showSnackbar(context.l10n.auto_key_1794);
     } else {
@@ -520,6 +522,7 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
     
     final filter = ref.read(currentStudentFilterProvider);
     final allList = await ref.read(filteredStudentsProvider(filter).future);
+    if (!mounted) return;
     final selectedStudentsList = allList.where((s) => _selectedStudents.contains(s.id)).toList();
     
     // تمرير قائمة الطلاب المحددين إلى شاشة طباعة البطاقات

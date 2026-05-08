@@ -44,14 +44,18 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage>
     await Future.delayed(const Duration(milliseconds: 4200));
     if (!mounted) return;
 
+    // Extract strings before async operation to avoid use_build_context_synchronously warning
+    final backupTitle = context.l10n.backupTitle;
+    final backupComplete = context.l10n.backupComplete;
+
     // Run Auto Backup check silently in background
     var didBackup = await BackupService.checkAndRunAutoBackup();
     if (didBackup) {
       final notifSettings = ref.read(notificationSettingsProvider);
       if (notifSettings.enableAll && notifSettings.backupAlerts) {
         ref.read(notificationsProvider.notifier).addNotification(
-          context.l10n.backupTitle,
-          context.l10n.backupComplete,
+          backupTitle,
+          backupComplete,
           'backup',
         );
       }

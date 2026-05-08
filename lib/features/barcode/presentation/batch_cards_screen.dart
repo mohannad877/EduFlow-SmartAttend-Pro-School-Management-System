@@ -102,6 +102,7 @@ class _BatchCardsScreenState extends ConsumerState<BatchCardsScreen> {
     try {
       final db = ref.read(attendanceDatabaseProvider);
       final settings = await db.select(db.attSettings).get();
+      if (!mounted) return;
       final schoolName = settings.where((s) => s.key == 'school_name').firstOrNull?.value ?? context.l10n.schoolName;
 
       final selected = _filteredStudents.where((s) => _selectedIds.contains(s.id)).toList();

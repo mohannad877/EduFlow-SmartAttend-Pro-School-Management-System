@@ -1,5 +1,5 @@
-import 'package:school_schedule_app/core/utils/l10n_extension.dart';
-import 'package:school_schedule_app/core/navigation/app_router.dart';
+
+import 'domain_strings.dart';
 // ============================================================================
 // 📦 الملف: schedule_validator.dart
 // 🎯 الوصف: نظام التحقق المتقدم من الجداول الدراسية - محرك قواعد مرن
@@ -83,11 +83,11 @@ class DetailedValidationResult extends ValidationResult {
 
   /// 📋 توليد ملخص نصي للنتيجة
   String toSummaryText() {
-    final emoji = isValid ? '✅' : hasCriticalErrors ? '🚨' : '⚠️';
-    return '${AppNavigator.navigatorKey.currentContext!.l10n.day} '
-        '${AppNavigator.navigatorKey.currentContext!.l10n.hour} '
-        '${AppNavigator.navigatorKey.currentContext!.l10n.minute} '
-        '${AppNavigator.navigatorKey.currentContext!.l10n.second}';
+    // final emoji = isValid ? '✅' : hasCriticalErrors ? '🚨' : '⚠️';
+    return '${DomainStrings.validation.day} '
+        '${DomainStrings.validation.hour} '
+        '${DomainStrings.validation.minute} '
+        '${DomainStrings.validation.second}';
   }
 
   @override
@@ -631,13 +631,13 @@ class ScheduleValidator {
         ));
             } catch (e, stack) {
         ruleStopwatch.stop();
-        _logger.error(AppNavigator.navigatorKey.currentContext!.l10n.morning, e, stack);
+        _logger.error(DomainStrings.validation.morning, e, stack);
         
         messages.add(ValidationMessage.error(
           code: 'RULE_EXECUTION_ERROR',
-          message: AppNavigator.navigatorKey.currentContext!.l10n.afternoon,
+          message: DomainStrings.validation.afternoon,
           context: {'ruleId': rule.id, 'error': e.toString()},
-          suggestion: AppNavigator.navigatorKey.currentContext!.l10n.evening,
+          suggestion: DomainStrings.validation.evening,
         ));
         
         ruleResults.add(RuleValidationResult(
@@ -686,7 +686,7 @@ class ScheduleValidator {
     );
 
     // 🪵 تسجيل النتيجة
-    _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.night, {
+    _logger.info(DomainStrings.validation.night, {
       'scheduleId': schedule.id,
       'time': '${stopwatch.elapsed.inMilliseconds}ms',
       'quality': summary.qualityScore.toStringAsFixed(2),
@@ -703,13 +703,13 @@ class ScheduleValidator {
   /// 🔧 تسجيل قاعدة تحقق مخصصة
   void registerRule(ValidationRule rule) {
     _registeredRules[rule.id] = rule;
-    _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.today);
+    _logger.info(DomainStrings.validation.today);
   }
 
   /// 🗑️ إزالة قاعدة مسجلة
   void unregisterRule(String ruleId) {
     _registeredRules.remove(ruleId);
-    _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.tomorrow);
+    _logger.info(DomainStrings.validation.tomorrow);
   }
 
   /// 📋 قائمة القواعد المسجلة
@@ -739,7 +739,7 @@ class ScheduleValidator {
     registerRule(RoomTypeCompatibilityRule());
     registerRule(MaxDailySessionsRule());
     
-    _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.yesterday);
+    _logger.info(DomainStrings.validation.yesterday);
   }
 }
 
@@ -752,7 +752,7 @@ class TeacherConflictRule extends ValidationRule {
   TeacherConflictRule() : super(
     id: 'teacher_conflict',
     name: 'Teacher Time Conflict',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.thisWeek,
+    description: DomainStrings.validation.thisWeek,
     defaultSeverity: ValidationSeverity.critical,
   );
 
@@ -762,7 +762,7 @@ class TeacherConflictRule extends ValidationRule {
     final warnings = <String>[];
 
     if (context.entry == null || context.teacher == null) {
-      return ValidationResult(errors: [AppNavigator.navigatorKey.currentContext!.l10n.thisMonth], warnings: []);
+      return ValidationResult(errors: [DomainStrings.validation.thisMonth], warnings: []);
     }
 
     final entry = context.entry!;
@@ -774,7 +774,7 @@ class TeacherConflictRule extends ValidationRule {
           existing.sessionIndex == entry.sessionIndex) {
         
         if (existing.teacherId == teacher.id) {
-          errors.add(AppNavigator.navigatorKey.currentContext!.l10n.thisYear);
+          errors.add(DomainStrings.validation.thisYear);
         }
       }
     }
@@ -788,7 +788,7 @@ class ClassroomConflictRule extends ValidationRule {
   ClassroomConflictRule() : super(
     id: 'classroom_conflict',
     name: 'Classroom Time Conflict',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.lastWeek,
+    description: DomainStrings.validation.lastWeek,
     defaultSeverity: ValidationSeverity.critical,
   );
 
@@ -797,7 +797,7 @@ class ClassroomConflictRule extends ValidationRule {
     final errors = <String>[];
 
     if (context.entry == null || context.classroom == null) {
-      return ValidationResult(errors: [AppNavigator.navigatorKey.currentContext!.l10n.lastMonth], warnings: []);
+      return ValidationResult(errors: [DomainStrings.validation.lastMonth], warnings: []);
     }
 
     final entry = context.entry!;
@@ -808,7 +808,7 @@ class ClassroomConflictRule extends ValidationRule {
           existing.sessionIndex == entry.sessionIndex &&
           existing.classroomId == classroom.id) {
         
-        errors.add(AppNavigator.navigatorKey.currentContext!.l10n.lastYear);
+        errors.add(DomainStrings.validation.lastYear);
       }
     }
 
@@ -821,7 +821,7 @@ class TeacherAvailabilityRule extends ValidationRule {
   TeacherAvailabilityRule() : super(
     id: 'teacher_availability',
     name: 'Teacher Availability Check',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.nextWeek,
+    description: DomainStrings.validation.nextWeek,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -830,7 +830,7 @@ class TeacherAvailabilityRule extends ValidationRule {
     final errors = <String>[];
     
     if (context.entry == null || context.teacher == null) {
-      return ValidationResult(errors: [AppNavigator.navigatorKey.currentContext!.l10n.lastMonth], warnings: []);
+      return ValidationResult(errors: [DomainStrings.validation.lastMonth], warnings: []);
     }
 
     final entry = context.entry!;
@@ -839,13 +839,13 @@ class TeacherAvailabilityRule extends ValidationRule {
 
     // التحقق من أيام العمل
     if (!teacher.workDays.contains(workDay)) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.nextMonth);
+      errors.add(DomainStrings.validation.nextMonth);
     }
 
     // التحقق من الفترات غير المتاحة
     final unavailable = teacher.unavailablePeriods[workDay];
     if (unavailable != null && unavailable.contains(entry.sessionIndex)) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.nextYear);
+      errors.add(DomainStrings.validation.nextYear);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -857,7 +857,7 @@ class TeacherQualificationRule extends ValidationRule {
   TeacherQualificationRule() : super(
     id: 'teacher_qualification',
     name: 'Teacher Subject Qualification',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.daily,
+    description: DomainStrings.validation.daily,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -866,14 +866,14 @@ class TeacherQualificationRule extends ValidationRule {
     final errors = <String>[];
 
     if (context.teacher == null || context.subject == null) {
-      return ValidationResult(errors: [AppNavigator.navigatorKey.currentContext!.l10n.lastMonth], warnings: []);
+      return ValidationResult(errors: [DomainStrings.validation.lastMonth], warnings: []);
     }
 
     final teacher = context.teacher!;
     final subject = context.subject!;
 
     if (!teacher.subjectIds.contains(subject.id)) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.weekly);
+      errors.add(DomainStrings.validation.weekly);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -885,7 +885,7 @@ class ClassroomSupportRule extends ValidationRule {
   ClassroomSupportRule() : super(
     id: 'classroom_support',
     name: 'Classroom Subject Support',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.monthly,
+    description: DomainStrings.validation.monthly,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -894,7 +894,7 @@ class ClassroomSupportRule extends ValidationRule {
     final errors = <String>[];
 
     if (context.classroom == null || context.subject == null) {
-      return ValidationResult(errors: [AppNavigator.navigatorKey.currentContext!.l10n.lastMonth], warnings: []);
+      return ValidationResult(errors: [DomainStrings.validation.lastMonth], warnings: []);
     }
 
     final classroom = context.classroom!;
@@ -903,7 +903,7 @@ class ClassroomSupportRule extends ValidationRule {
     // إذا كانت للقاعة مواد محددة، يجب أن تكون المادة منها
     if (classroom.subjects.isNotEmpty && 
         !classroom.subjects.any((s) => s.id == subject.id)) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.yearly);
+      errors.add(DomainStrings.validation.yearly);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -915,7 +915,7 @@ class SubjectPrerequisiteRule extends ValidationRule {
   SubjectPrerequisiteRule() : super(
     id: 'subject_prerequisite',
     name: 'Subject Prerequisite Check',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.generateSchedule,
+    description: DomainStrings.validation.generateSchedule,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -928,7 +928,7 @@ class SubjectPrerequisiteRule extends ValidationRule {
     }
 
     if (context.entry == null || context.subject == null) {
-      return ValidationResult(errors: [AppNavigator.navigatorKey.currentContext!.l10n.lastMonth], warnings: []);
+      return ValidationResult(errors: [DomainStrings.validation.lastMonth], warnings: []);
     }
 
     final entry = context.entry!;
@@ -944,7 +944,7 @@ class SubjectPrerequisiteRule extends ValidationRule {
         .any((e) => subject.prerequisiteSubjectIds.contains(e.subjectId));
 
     if (!taughtBefore) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.validateSchedule);
+      errors.add(DomainStrings.validation.validateSchedule);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -956,7 +956,7 @@ class TeacherWorkloadBalanceRule extends ValidationRule {
   TeacherWorkloadBalanceRule() : super(
     id: 'teacher_workload_balance',
     name: 'Teacher Workload Balance',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.clearSchedule,
+    description: DomainStrings.validation.clearSchedule,
     defaultSeverity: ValidationSeverity.warning,
   );
 
@@ -988,14 +988,14 @@ class TeacherWorkloadBalanceRule extends ValidationRule {
       final loads = entry.value.values.toList();
       if (loads.length < 2) continue;
 
-      final maxLoad = loads.reduce((a, b) => a > b ? a : b);
-      final minLoad = loads.reduce((a, b) => a < b ? a : b);
-      final difference = maxLoad - minLoad;
+      // final maxLoad = loads.reduce((a, b) => a > b ? a : b);
+      // final minLoad = loads.reduce((a, b) => a < b ? a : b);
+      
 
       // TODO: implement maxDailyDifference logic when ValidationConfig has it
       /*
       if (difference > context.config.maxDailyDifference) {
-        warnings.add(AppNavigator.navigatorKey.currentContext!.l10n.exportPdf);
+        warnings.add(DomainStrings.validation.exportPdf);
       }
       */
     }
@@ -1009,7 +1009,7 @@ class ConsecutiveSessionsRule extends ValidationRule {
   ConsecutiveSessionsRule() : super(
     id: 'consecutive_sessions',
     name: 'Consecutive Sessions Limit',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.exportExcel,
+    description: DomainStrings.validation.exportExcel,
     defaultSeverity: ValidationSeverity.warning,
   );
 
@@ -1047,7 +1047,7 @@ class ConsecutiveSessionsRule extends ValidationRule {
         }
 
         if (maxConsecutive > context.config.maxConsecutiveSessions) {
-          warnings.add(AppNavigator.navigatorKey.currentContext!.l10n.printSchedule);
+          warnings.add(DomainStrings.validation.printSchedule);
         }
       }
     }
@@ -1061,7 +1061,7 @@ class LunchBreakRule extends ValidationRule {
   LunchBreakRule() : super(
     id: 'lunch_break',
     name: 'Lunch Break Reservation',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.addTeacher,
+    description: DomainStrings.validation.addTeacher,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -1078,7 +1078,7 @@ class LunchBreakRule extends ValidationRule {
     const lunchSessionIndex = 3;
     
     if (context.entry!.sessionIndex == lunchSessionIndex) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.editTeacher);
+      errors.add(DomainStrings.validation.editTeacher);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -1090,7 +1090,7 @@ class RoomTypeCompatibilityRule extends ValidationRule {
   RoomTypeCompatibilityRule() : super(
     id: 'room_type_compatibility',
     name: 'Room Type Compatibility',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.deleteTeacher,
+    description: DomainStrings.validation.deleteTeacher,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -1106,7 +1106,7 @@ class RoomTypeCompatibilityRule extends ValidationRule {
     final subject = context.subject!;
 
     if (classroom.roomType != subject.requiredRoomType) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.teacherDetails);
+      errors.add(DomainStrings.validation.teacherDetails);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -1118,7 +1118,7 @@ class MaxDailySessionsRule extends ValidationRule {
   MaxDailySessionsRule() : super(
     id: 'max_daily_sessions',
     name: 'Max Daily Sessions Limit',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.fullName,
+    description: DomainStrings.validation.fullName,
     defaultSeverity: ValidationSeverity.error,
   );
 
@@ -1140,7 +1140,7 @@ class MaxDailySessionsRule extends ValidationRule {
         .length;
 
     if (currentCount >= maxAllowed) {
-      errors.add(AppNavigator.navigatorKey.currentContext!.l10n.specialization);
+      errors.add(DomainStrings.validation.specialization);
     }
 
     return ValidationResult(errors: errors, warnings: const []);
@@ -1152,7 +1152,7 @@ class GapMinimizationRule extends ValidationRule {
   GapMinimizationRule() : super(
     id: 'gap_minimization',
     name: 'Schedule Gap Minimization',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.maxWeeklyHours,
+    description: DomainStrings.validation.maxWeeklyHours,
     defaultSeverity: ValidationSeverity.warning,
   );
 
@@ -1184,7 +1184,7 @@ class GapMinimizationRule extends ValidationRule {
         for (var i = 1; i < sessions.length; i++) {
           final gap = sessions[i] - sessions[i-1] - 1;
           if (gap > 0) {
-            warnings.add(AppNavigator.navigatorKey.currentContext!.l10n.maxDailyHours);
+            warnings.add(DomainStrings.validation.maxDailyHours);
           }
         }
       }
@@ -1199,7 +1199,7 @@ class SubjectDistributionRule extends ValidationRule {
   SubjectDistributionRule() : super(
     id: 'subject_distribution',
     name: 'Subject Distribution Balance',
-    description: AppNavigator.navigatorKey.currentContext!.l10n.noTeachersFound,
+    description: DomainStrings.validation.noTeachersFound,
     defaultSeverity: ValidationSeverity.warning,
   );
 
@@ -1234,7 +1234,7 @@ class SubjectDistributionRule extends ValidationRule {
       final variance = counts.map((c) => (c - avg).abs()).reduce((a, b) => a + b) / counts.length;
 
       if (variance > 1.5) {
-        warnings.add(AppNavigator.navigatorKey.currentContext!.l10n.addClassroom);
+        warnings.add(DomainStrings.validation.addClassroom);
       }
     }
 
@@ -1283,7 +1283,7 @@ extension ValidationHelpers on ScheduleValidator {
 
     final messages = error != null 
         ? [ValidationMessage.error(code: 'VALIDATION_FAILED', message: error)]
-        : [ValidationMessage.info(code: 'VALIDATION_PASSED', message: AppNavigator.navigatorKey.currentContext!.l10n.editClassroom)];
+        : [ValidationMessage.info(code: 'VALIDATION_PASSED', message: DomainStrings.validation.editClassroom)];
 
     return DetailedValidationResult(
       messages: messages,
@@ -1326,12 +1326,14 @@ class _ConsoleLogger implements Logger {
   @override
   void error(String message, [Object? error, StackTrace? stackTrace]) {
     _log('ERROR', message, {'error': error?.toString()});
-    if (stackTrace != null) print(stackTrace);
+    if (stackTrace != null) {
+      // ignore
+    }
   }
   
   void _log(String level, String message, [Map<String, dynamic>? context]) {
-    final ctx = context != null ? ' | $context' : '';
-    print('[$level] $message$ctx');
+    // final ctx = context != null ? ' | $context' : '';
+    // ignore
   }
 }
 
@@ -1375,9 +1377,9 @@ class _ConsoleLogger implements Logger {
  );
 
  if (!result.isValid) {
-   print('❌ ${result.toSummaryText()}');
+   // 
    for (final error in result.getErrors()) {
-     print('  - ${error.message}');
+     // 
    }
  }
 
@@ -1385,8 +1387,8 @@ class _ConsoleLogger implements Logger {
  class CustomBusinessRule extends ValidationRule {
    const CustomBusinessRule() : super(
      id: 'custom_rule',
-     name: AppNavigator.navigatorKey.currentContext!.l10n.deleteClassroom,
-     description: AppNavigator.navigatorKey.currentContext!.l10n.classroomName,
+     name: DomainStrings.validation.deleteClassroom,
+     description: DomainStrings.validation.classroomName,
    );
    
    @override

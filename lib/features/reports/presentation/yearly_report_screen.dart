@@ -49,12 +49,12 @@ class _YearlyReportScreenState extends ConsumerState<YearlyReportScreen> {
     var totalExcused = 0;
     var totalSessions = sessions.length;
 
-    for (var AttSession in sessions) {
+    for (var session in sessions) {
       final attRecordsList = await (db.select(db.attRecords)
-            ..where((a) => a.sessionId.equals(AttSession.id)))
+            ..where((a) => a.sessionId.equals(session.id)))
           .get();
 
-      final month = AttSession.date.month;
+      final month = session.date.month;
 
       for (var record in attRecordsList) {
         switch (record.status) {
@@ -455,7 +455,7 @@ class _YearlyReportScreenState extends ConsumerState<YearlyReportScreen> {
   }
 
   Widget _buildHighlights() {
-    final total = _yearlyStats.totalPresent + _yearlyStats.totalAbsent;
+    // final total = _yearlyStats.totalPresent + _yearlyStats.totalAbsent;
     final bestMonth = _findBestMonth();
     final worstMonth = _findWorstMonth();
 

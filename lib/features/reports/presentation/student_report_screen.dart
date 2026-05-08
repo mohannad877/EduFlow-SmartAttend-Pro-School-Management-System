@@ -128,10 +128,12 @@ class _StudentReportScreenState extends ConsumerState<StudentReportScreen> {
   }
 
   void _showSearchableStudentPicker() async {
+    final students = await _getAllStudents();
+    if (!mounted) return;
     final result = await showSearch<AttStudent?>(
       context: context,
       delegate: StudentSearchDelegate(
-        students: await _getAllStudents(),
+        students: students,
         label: context.l10n.searchStudent,
       ),
     );
@@ -205,6 +207,7 @@ class _StudentReportScreenState extends ConsumerState<StudentReportScreen> {
 
     final db = ref.read(attendanceDatabaseProvider);
     final settings = await db.select(db.attSettings).get();
+    if (!mounted) return;
     final schoolName = settings.where((s) => s.key == 'school_name').firstOrNull?.value ?? context.l10n.schoolName;
 
     final path = await AttendancePdfService.generateStudentReport(

@@ -191,6 +191,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
   }
 
   Future<Map<String, dynamic>> _loadAdvancedStats() async {
+    final bestMonthStr = context.l10n.march2025;
     final db = ref.read(attendanceDatabaseProvider);
     final students = await db.select(db.attStudents).get();
     final total = students.length;
@@ -216,7 +217,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
     final absenceRate = total > 0 ? ((absent / total) * 100).toStringAsFixed(1) : '0';
 
     // أفضل شهر (مثال بسيط)
-    final bestMonth = context.l10n.march2025;
+    final bestMonth = bestMonthStr;
 
     return {
       'totalStudents': total,
@@ -292,7 +293,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       if (await reportsDir.exists()) {
         final files = await reportsDir.list().where((e) => e is File).toList();
         files.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-        if (mounted) {
+        if (context.mounted) {
           setState(() {
             _recentReports = files.take(5).toList();
           });
@@ -371,6 +372,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
         }
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.invalidToken, maxLines: 1, overflow: TextOverflow.ellipsis)));
     }
   }
@@ -405,6 +407,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
 
   Future<void> _exportWithOptions(String format) async {
     final filter = await showReportFilterDialog(context);
+    if (!mounted) return;
     if (filter == null) return;
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.exportingFormat, maxLines: 1, overflow: TextOverflow.ellipsis)));
@@ -542,7 +545,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
                     sectionB: sectionB,
                   );
                   
-                  if (mounted) {
+                  if (context.mounted) {
                     showDialog(
                       context: context,
                       builder: (ctx) => _ComparativeResultDialog(results: results),
@@ -593,7 +596,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
                   
                   final results = await service.getClassBreakdown(grade);
                   
-                  if (mounted) {
+                  if (context.mounted) {
                     showDialog(
                       context: context,
                       builder: (ctx) => _ClassDetailedResultDialog(grade: grade, results: results),

@@ -1,6 +1,5 @@
 import 'package:school_schedule_app/core/navigation/app_router.dart';
 import 'package:school_schedule_app/core/utils/l10n_extension.dart';
-import 'package:school_schedule_app/core/utils/l10n_extension.dart';
 import 'package:drift/drift.dart';
 import 'package:school_schedule_app/core/database/attendance_database.dart';
 

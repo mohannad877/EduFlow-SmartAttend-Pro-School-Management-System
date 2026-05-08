@@ -1,6 +1,5 @@
 import 'package:school_schedule_app/core/navigation/app_router.dart';
 import 'package:school_schedule_app/core/utils/l10n_extension.dart';
-import 'package:school_schedule_app/core/utils/l10n_extension.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';

@@ -351,7 +351,7 @@ class _ReportPreviewScreenState extends State<ReportPreviewScreen> {
 
   Future<void> _saveCopy() async {
     try {
-      final directory = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+      // final directory = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
       final newPath = context.l10n.backupPath;
       await File(widget.args.filePath).copy(newPath);
       _showSnackbar(context.l10n.copySaved);

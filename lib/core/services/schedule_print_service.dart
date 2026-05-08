@@ -13,7 +13,6 @@ import 'package:school_schedule_app/domain/entities/session.dart';
 import 'package:school_schedule_app/domain/entities/teacher.dart';
 import 'package:school_schedule_app/domain/entities/classroom.dart';
 import 'package:school_schedule_app/domain/entities/subject.dart';
-import 'package:school_schedule_app/domain/entities/enums.dart';
 import 'package:school_schedule_app/core/models/print_settings.dart';
 import 'package:school_schedule_app/core/models/service_strings.dart';
 import 'package:school_schedule_app/core/theme/app_spacing.dart';

@@ -16,7 +16,6 @@ import 'package:school_schedule_app/domain/entities/school.dart';
 import 'package:school_schedule_app/domain/entities/enums.dart';
 import 'package:school_schedule_app/domain/entities/session.dart';
 import 'package:school_schedule_app/core/models/service_strings.dart';
-import 'package:school_schedule_app/core/theme/app_spacing.dart';
 
 @lazySingleton
 class ExcelExportService {

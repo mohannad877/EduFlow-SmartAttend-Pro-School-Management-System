@@ -350,7 +350,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             child: Icon(statusIcon, color: statusColor, size: 18),
           ),
           title: Text(student?.name ?? context.l10n.balancedModeDesc, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: student != null ? Text(student.barcode ?? '', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+          subtitle: student != null ? Text(student.barcode, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(

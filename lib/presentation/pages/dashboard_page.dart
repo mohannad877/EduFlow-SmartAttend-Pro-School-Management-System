@@ -3,14 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:school_schedule_app/core/utils/l10n_extension.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:school_schedule_app/presentation/widgets/school_info_header.dart';
-import 'package:school_schedule_app/presentation/widgets/stats_card.dart';
 import 'package:school_schedule_app/presentation/widgets/quick_action_button.dart';
 import 'package:school_schedule_app/presentation/pages/teacher_list_page.dart';
 import 'package:school_schedule_app/presentation/pages/schedule_grid_page.dart';
 import 'package:school_schedule_app/presentation/pages/classroom_list_page.dart';
 import 'package:school_schedule_app/presentation/pages/subject_list_page.dart';
-import 'package:school_schedule_app/presentation/widgets/notification_bell.dart';
 import 'package:school_schedule_app/core/theme/app_colors.dart';
 
 import 'package:school_schedule_app/presentation/bloc/dashboard/dashboard_bloc.dart';
@@ -81,7 +78,7 @@ class DashboardPage extends StatelessWidget {
             }
           }
 
-          final greeting = _getGreeting(context);
+          // final greeting = _getGreeting(context);
 
           return Scaffold(
             body: Container(

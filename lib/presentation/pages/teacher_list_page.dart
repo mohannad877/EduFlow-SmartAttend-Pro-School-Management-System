@@ -68,12 +68,14 @@ class TeacherListPage extends StatelessWidget {
                 }
               },
               builder: (context, state) {
-                if (state is TeacherLoading)
+                if (state is TeacherLoading) {
                   return const Center(child: CircularProgressIndicator());
-                if (state is TeacherError)
+                }
+                if (state is TeacherError) {
                   return Center(
                       child: Text(state.message,
                           maxLines: 1, overflow: TextOverflow.ellipsis));
+                }
                 if (state is TeachersLoaded) {
                   if (state.teachers.isEmpty) {
                     return PremiumEmptyState(
@@ -86,8 +88,9 @@ class TeacherListPage extends StatelessWidget {
                               MaterialPageRoute(
                                   builder: (_) => const TeacherFormPage()))
                           .then((_) {
-                        if (context.mounted)
+                        if (context.mounted) {
                           context.read<TeacherBloc>().add(LoadTeachers());
+                        }
                       }),
                     );
                   }
@@ -182,8 +185,9 @@ class TeacherListPage extends StatelessWidget {
                                       MaterialPageRoute(
                                           builder: (_) => TeacherFormPage(
                                               teacher: teacher))).then((_) {
-                                    if (context.mounted)
+                                    if (context.mounted) {
                                       bloc.add(LoadTeachers());
+                                    }
                                   });
                                 },
                               ),

@@ -1,6 +1,5 @@
 import 'package:school_schedule_app/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:school_schedule_app/core.dart';
 import 'theme/app_colors.dart';
 
 /// مساعد إشعارات موحّد لجميع الصفحات

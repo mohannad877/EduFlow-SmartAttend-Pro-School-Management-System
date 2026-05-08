@@ -12,6 +12,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
+import 'package:school_schedule_app/domain/usecases/algorithm/domain_strings.dart';
+import 'package:school_schedule_app/domain/usecases/algorithm/algorithm_strings_ext.dart';
 
 // 📁 الاستيراد المحلي للكيانات والمخازن
 import 'package:school_schedule_app/domain/entities/session.dart';
@@ -281,6 +283,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
 
     try {
       // 📡 تحديث التقدم مع دعم الإلغاء
+      final l10n = AppNavigator.navigatorKey.currentContext?.l10n;
+      if (l10n != null) {
+        DomainStrings.generator = l10n.generatorStrings;
+      }
       void onProgress(GenerationProgress progress) {
         if (cancelToken.isCancelled) return;
         emit(currentState.copyWith(
@@ -465,6 +471,10 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
       ));
 
       // 🔍 تنفيذ التحقق
+      final l10n = AppNavigator.navigatorKey.currentContext?.l10n;
+      if (l10n != null) {
+        DomainStrings.validation = l10n.validationStrings;
+      }
       final validationResult = await _validator.validateSchedule(
         schedule: currentState.schedule,
         teachers: teachers,

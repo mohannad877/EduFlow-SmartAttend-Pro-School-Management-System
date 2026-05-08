@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -20,3 +21,4 @@ class Logger {
     print('DEBUG: $m $args');
   }
 }
+

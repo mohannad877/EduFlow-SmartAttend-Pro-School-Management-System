@@ -1,5 +1,5 @@
-import 'package:school_schedule_app/core/utils/l10n_extension.dart';
-import 'package:school_schedule_app/core/navigation/app_router.dart';
+
+import 'domain_strings.dart';
 // ============================================================================
 // 📦 الملف: intelligent_schedule_generator.dart
 // 🎯 الوصف: محرك توليد جداول دراسية ذكي باستخدام خوارزميات هجينة متقدمة
@@ -247,12 +247,12 @@ class UnassignedSlot {
   /// 💡 توليد توصية ذكية لحل المشكلة
   String get smartRecommendation {
     if (blockingConstraint == ConstraintType.teacherAvailability) {
-      return AppNavigator.navigatorKey.currentContext!.l10n.classrooms;
+      return DomainStrings.generator.classrooms;
     }
     if (blockingConstraint == ConstraintType.classroomAvailability) {
-      return AppNavigator.navigatorKey.currentContext!.l10n.subjects;
+      return DomainStrings.generator.subjects;
     }
-    return AppNavigator.navigatorKey.currentContext!.l10n.grades;
+    return DomainStrings.generator.grades;
   }
 
   @override
@@ -411,7 +411,7 @@ class GenerationProgress {
   final String message;
   final Map<String, dynamic>? metadata;
 
-  GenerationProgress({
+  const GenerationProgress({
     required this.phase,
     required this.progress,
     required this.message,
@@ -504,7 +504,7 @@ class IntelligentScheduleGenerator {
       cfg.onProgress?.call(GenerationProgress(
         phase: GenerationPhase.initializing,
         progress: 0.0,
-        message: AppNavigator.navigatorKey.currentContext!.l10n.sessions,
+        message: DomainStrings.generator.initializing,
       ));
 
       // 🔄 حلقة المحاولات مع إدارة الأخطاء
@@ -512,13 +512,13 @@ class IntelligentScheduleGenerator {
       for (var attempt = 1; attempt <= cfg.maxRetries; attempt++) {
         // 🛑 التحقق من إلغاء العملية
         if (cfg.cancellationToken?.isCancelled == true) {
-          throw ScheduleGenerationException(AppNavigator.navigatorKey.currentContext!.l10n.attendance);
+          throw ScheduleGenerationException(DomainStrings.generator.cancelled);
         }
 
         cfg.onProgress?.call(GenerationProgress(
           phase: GenerationPhase.initializing,
           progress: (attempt - 1) / cfg.maxRetries,
-          message: AppNavigator.navigatorKey.currentContext!.l10n.dashboard,
+          message: DomainStrings.generator.loadingData,
         ));
 
         try {
@@ -535,19 +535,19 @@ class IntelligentScheduleGenerator {
             cfg.onProgress?.call(GenerationProgress(
               phase: GenerationPhase.completed,
               progress: 1.0,
-              message: AppNavigator.navigatorKey.currentContext!.l10n.home,
+              message: DomainStrings.generator.completed,
             ));
             return result;
           }
 
           lastResult = result;
-          _logger.warning(AppNavigator.navigatorKey.currentContext!.l10n.welcome);
+          _logger.warning(DomainStrings.generator.error);
 
-        } on TimeoutException catch (e) {
-          _logger.error(AppNavigator.navigatorKey.currentContext!.l10n.profile);
+        } on TimeoutException {
+          _logger.error(DomainStrings.generator.timeout);
           if (attempt == cfg.maxRetries) rethrow;
-        } on ScheduleGenerationException catch (e) {
-          _logger.error(AppNavigator.navigatorKey.currentContext!.l10n.logout);
+        } on ScheduleGenerationException {
+          _logger.error(DomainStrings.generator.failed);
           if (attempt == cfg.maxRetries) rethrow;
           // انتظار قصير قبل إعادة المحاولة
           await Future.delayed(const Duration(milliseconds: 500));
@@ -556,11 +556,11 @@ class IntelligentScheduleGenerator {
 
       // 📦 إرجاع أفضل نتيجة تم الحصول عليها
       if (lastResult != null) {
-        _logger.warning(AppNavigator.navigatorKey.currentContext!.l10n.settings);
+        _logger.warning(DomainStrings.generator.saving);
         return lastResult;
       }
 
-      throw ScheduleGenerationException(AppNavigator.navigatorKey.currentContext!.l10n.notifications);
+      throw ScheduleGenerationException(DomainStrings.generator.failed);
 
     } finally {
       stopwatch.stop();
@@ -614,9 +614,9 @@ class IntelligentScheduleGenerator {
     // 💾 الحفظ في المستودع
     if (_scheduleRepo != null) {
       await _scheduleRepo.saveSchedule(schedule);
-      _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.messages);
+      _logger.info("Schedule saved successfully.");
     } else {
-      _logger.warning(AppNavigator.navigatorKey.currentContext!.l10n.calendar);
+      _logger.warning("Schedule Repository is not initialized. Schedule will not be saved.");
     }
     
     return scheduleId;
@@ -717,7 +717,7 @@ class IntelligentScheduleGenerator {
     config.onProgress?.call(GenerationProgress(
       phase: GenerationPhase.loadingData,
       progress: 0.1,
-      message: AppNavigator.navigatorKey.currentContext!.l10n.reports,
+      message: DomainStrings.generator.preprocessing,
     ));
     
     final loadDataStart = DateTime.now().millisecondsSinceEpoch;
@@ -731,7 +731,7 @@ class IntelligentScheduleGenerator {
     config.onProgress?.call(GenerationProgress(
       phase: GenerationPhase.constructivePhase,
       progress: 0.3,
-      message: AppNavigator.navigatorKey.currentContext!.l10n.analytics,
+      message: DomainStrings.generator.optimizing,
     ));
 
     final constructStart = DateTime.now().millisecondsSinceEpoch;
@@ -749,7 +749,7 @@ class IntelligentScheduleGenerator {
       config.onProgress?.call(GenerationProgress(
         phase: GenerationPhase.optimizationPhase,
         progress: 0.7,
-        message: AppNavigator.navigatorKey.currentContext!.l10n.backup,
+        message: DomainStrings.generator.generating,
       ));
 
       final optimizeStart = DateTime.now().millisecondsSinceEpoch;
@@ -768,7 +768,7 @@ class IntelligentScheduleGenerator {
     config.onProgress?.call(GenerationProgress(
       phase: GenerationPhase.validationPhase,
       progress: 0.9,
-      message: AppNavigator.navigatorKey.currentContext!.l10n.restore,
+      message: DomainStrings.generator.validating,
     ));
 
     final validationStart = DateTime.now().millisecondsSinceEpoch;
@@ -814,7 +814,7 @@ class IntelligentScheduleGenerator {
     required GenerationConfig config,
   }) async {
     if (_teacherRepo == null || _classroomRepo == null || _subjectRepo == null) {
-      throw ScheduleGenerationException(AppNavigator.navigatorKey.currentContext!.l10n.users);
+      throw ScheduleGenerationException("Repositories are not initialized.");
     }
     
     // 🔄 تحميل البيانات بشكل متوازي لتحسين الأداء
@@ -907,7 +907,7 @@ class IntelligentScheduleGenerator {
 
     // 🔄 الحلقة الرئيسية للتخصيص
     for (var dayIdx = 0; dayIdx < workDays.length; dayIdx++) {
-      final workDay = workDays[dayIdx];
+      // final workDay = workDays[dayIdx];
       
       for (var sessIdx = 0; sessIdx < dailySessions; sessIdx++) {
         for (final classroom in sortedClassrooms) {
@@ -949,11 +949,11 @@ class IntelligentScheduleGenerator {
               classroomName: classroom.name,
               dayIndex: dayIdx,
               sessionIndex: sessIdx,
-              reason: AppNavigator.navigatorKey.currentContext!.l10n.roles,
+              reason: DomainStrings.generator.finishing,
               blockingConstraint: ConstraintType.teacherAvailability,
               suggestedSolutions: [
-                AppNavigator.navigatorKey.currentContext!.l10n.permissions,
-                AppNavigator.navigatorKey.currentContext!.l10n.schoolSettings,
+                DomainStrings.generator.completed,
+                DomainStrings.generator.preprocessing,
               ],
             ));
             continue;
@@ -1000,7 +1000,7 @@ class IntelligentScheduleGenerator {
     }
 
     // 📊 تسجيل إحصائيات البناء
-    _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.academicYear);
+    _logger.info(DomainStrings.generator.validating);
 
     return _BuildResult(
       schedule: schedule,
@@ -1042,7 +1042,7 @@ class IntelligentScheduleGenerator {
         
         // 🛑 التحقق من الإلغاء
         if (config.cancellationToken?.isCancelled == true) {
-          _logger.warning(AppNavigator.navigatorKey.currentContext!.l10n.term);
+          _logger.warning(DomainStrings.generator.finishing);
           break;
         }
 
@@ -1095,12 +1095,12 @@ class IntelligentScheduleGenerator {
         config.onProgress?.call(GenerationProgress(
           phase: GenerationPhase.optimizationPhase,
           progress: progress,
-          message: AppNavigator.navigatorKey.currentContext!.l10n.semester,
+          message: DomainStrings.generator.finishing,
         ));
       }
     }
 
-    _logger.info(AppNavigator.navigatorKey.currentContext!.l10n.week);
+    _logger.info(DomainStrings.generator.completed);
 
     return initialResult.copyWith(
       schedule: best,
@@ -1310,7 +1310,7 @@ class IntelligentScheduleGenerator {
     
     // حساب المتوسطات
     final totalSessions = schedule.length;
-    final totalTeacherSlots = data.teachers.length * 5 * 8; // افتراض: 5 أيام × 8 حصص
+    // final totalTeacherSlots = data.teachers.length * 5 * 8; // افتراض: 5 أيام × 8 حصص
     final totalClassroomSlots = data.classrooms.length * 5 * 8;
     
     return GenerationStatistics(

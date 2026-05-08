@@ -52,6 +52,8 @@ class _ImportStudentsScreenState extends ConsumerState<ImportStudentsScreen> {
         allowMultiple: false,
       );
 
+      if (!mounted) return;
+
       if (result == null || result.files.isEmpty) {
         setState(() => _isLoading = false);
         return;
