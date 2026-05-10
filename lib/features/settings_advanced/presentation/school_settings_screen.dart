@@ -7,6 +7,8 @@ import 'package:school_schedule_app/core/theme/app_colors.dart';
 import 'package:school_schedule_app/core/theme/app_text_styles.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:school_schedule_app/core/database/attendance_providers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:school_schedule_app/core/utils/test_data_seeder.dart';
 
 /// شاشة إعدادات المدرسة
 class SchoolSettingsScreen extends ConsumerStatefulWidget {
@@ -167,6 +169,23 @@ class _SchoolSettingsScreenState extends ConsumerState<SchoolSettingsScreen> {
                     const SizedBox(height: 12),
                     _buildWorkDaysSelector(),
 
+                    const SizedBox(height: 48),
+                    _buildSectionTitle('أدوات المطور (Developer Tools)'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => _showSeedConfirmationDialog(context),
+                        icon: const Icon(Icons.science_rounded),
+                        label: const Text('توليد بيانات تجريبية (Seed Test Data)'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -249,7 +268,14 @@ class _SchoolSettingsScreenState extends ConsumerState<SchoolSettingsScreen> {
               children: List.generate(7, (index) {
                 final isSelected = _selectedWorkDays[index];
                 return FilterChip(
-                  label: Text(days[index], maxLines: 1, overflow: TextOverflow.ellipsis),
+                  label: Text(
+                    days[index], 
+                    maxLines: 1, 
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected ? AppColors.primary : Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -303,13 +329,58 @@ class _SchoolSettingsScreenState extends ConsumerState<SchoolSettingsScreen> {
         );
       }
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   Future<void> _updateSetting(AttendanceDatabase db, String key, String value) async {
     await (db.update(db.attSettings)..where((s) => s.key.equals(key)))
         .write(AttSettingsCompanion(value: Value(value)));
+  }
+
+  Future<void> _showSeedConfirmationDialog(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تحذير خطير!'),
+        content: const Text('هذه العملية ستقوم بمسح كافة البيانات الحالية بالكامل (جداول، حضور، معلمين...) واستبدالها ببيانات تجريبية. هل أنت متأكد؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('نعم، امسح كل شيء وأنشئ بيانات تجريبية'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      setState(() => _isSaving = true);
+      try {
+        await TestDataSeeder.seedAll(ref);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم توليد البيانات بنجاح!'), backgroundColor: Colors.green),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('حدث خطأ: \$e'), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
+        }
+      }
+    }
   }
 
   @override

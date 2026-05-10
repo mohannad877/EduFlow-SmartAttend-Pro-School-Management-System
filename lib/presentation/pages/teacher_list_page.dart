@@ -29,10 +29,7 @@ class TeacherListPage extends StatelessWidget {
                   maxLines: 1, overflow: TextOverflow.ellipsis),
               centerTitle: true,
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              extendedPadding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            floatingActionButton: FloatingActionButton(
               onPressed: () {
                 final bloc = context.read<TeacherBloc>();
                 Navigator.push(
@@ -43,15 +40,7 @@ class TeacherListPage extends StatelessWidget {
                   if (context.mounted) bloc.add(LoadTeachers());
                 });
               },
-              icon: Icon(Icons.add,
-                  color: Theme.of(context).colorScheme.onPrimary, size: 24),
-              label: Text(context.l10n.addTeacher,
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
+              child: const Icon(Icons.add),
             ).animate().scale(),
             body: BlocConsumer<TeacherBloc, TeacherState>(
               listener: (context, state) {
@@ -157,12 +146,12 @@ class TeacherListPage extends StatelessWidget {
                                                   fontSize: 10,
                                                   color: Theme.of(context)
                                                       .colorScheme
-                                                      .onSecondary),
+                                                      .onPrimaryContainer),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis),
                                           backgroundColor: Theme.of(context)
                                               .colorScheme
-                                              .secondary,
+                                              .primaryContainer,
                                           padding: EdgeInsets.zero,
                                           materialTapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,

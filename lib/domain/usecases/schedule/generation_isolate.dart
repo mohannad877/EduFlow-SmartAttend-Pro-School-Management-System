@@ -11,6 +11,7 @@ class IsolateGenerationRequest {
   final GenerationMode mode;
   final GenerationConfig config;
   final GenerationData data;
+  final SendPort? progressPort;
 
   IsolateGenerationRequest({
     required this.dailySessions,
@@ -19,6 +20,7 @@ class IsolateGenerationRequest {
     required this.mode,
     required this.config,
     required this.data,
+    this.progressPort,
   });
 }
 
@@ -31,15 +33,23 @@ Future<GenerationResult> runGenerationOptimizationInIsolate(IsolateGenerationReq
       null, null, null, null, validator
     );
 
+    // ⚠️ استخدام نسخة آمنة من الإعدادات (بدون metricsCollector و cancellationToken)
+    // هذه الكائنات تحتوي على Completer وغير قابلة للإرسال عبر Isolate
+    final safeConfig = request.config.toIsolateSafe();
+
     // 2️⃣ تشغيل الخوارزمية الثقيلة داخل عملية Isolate
     return await generator.generateScheduleFromData(
       dailySessions: request.dailySessions,
       workDays: request.workDays,
       targetClassroomIds: request.targetClassroomIds,
       mode: request.mode,
-      config: request.config.copyWith(
-        // إزالة مستمع التقدم لأنه لا ينتقل عبر الـ Isolate بسهولة
-        onProgress: null,
+      config: safeConfig.copyWith(
+        // إرسال التقدم عبر SendPort باستخدام Records لتجنب مشاكل الذاكرة
+        onProgress: request.progressPort != null 
+          ? (progress) {
+              request.progressPort!.send((progress.phase.index, progress.progress, progress.message));
+            }
+          : null,
       ),
       data: request.data,
     );

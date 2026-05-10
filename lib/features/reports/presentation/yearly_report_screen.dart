@@ -57,21 +57,19 @@ class _YearlyReportScreenState extends ConsumerState<YearlyReportScreen> {
       final month = session.date.month;
 
       for (var record in attRecordsList) {
+        final currentStats = monthlyMap[month] ?? MonthlySummary.empty();
         switch (record.status) {
           case 'present':
             totalPresent++;
-            monthlyMap[month] = (monthlyMap[month] ?? MonthlySummary.empty())
-                .copyWith(present: monthlyMap[month]!.present + 1);
+            monthlyMap[month] = currentStats.copyWith(present: currentStats.present + 1);
             break;
           case 'absent':
             totalAbsent++;
-            monthlyMap[month] = (monthlyMap[month] ?? MonthlySummary.empty())
-                .copyWith(absent: monthlyMap[month]!.absent + 1);
+            monthlyMap[month] = currentStats.copyWith(absent: currentStats.absent + 1);
             break;
           case 'late':
             totalLate++;
-            monthlyMap[month] = (monthlyMap[month] ?? MonthlySummary.empty())
-                .copyWith(late: monthlyMap[month]!.late + 1);
+            monthlyMap[month] = currentStats.copyWith(late: currentStats.late + 1);
             break;
           case 'excused':
             totalExcused++;

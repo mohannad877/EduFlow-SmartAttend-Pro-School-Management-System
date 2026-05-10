@@ -151,14 +151,18 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Session Info
-              Text(
-                '${context.l10n.day}: ${currentDay?.getLocalizedName(context)}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text(
-                '${context.l10n.session}: $currentSessionNum',
-                style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 1, overflow: TextOverflow.ellipsis),
+               Text(
+                 '${context.l10n.day}: ${currentDay?.getLocalizedName(context)}',
+                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                       color: Theme.of(context).colorScheme.onSurface,
+                     ),
+               maxLines: 1, overflow: TextOverflow.ellipsis),
+               Text(
+                 '${context.l10n.session}: $currentSessionNum',
+                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                       color: Theme.of(context).colorScheme.onSurface,
+                     ),
+               maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 16),
 
               if (hasConflict)
@@ -199,7 +203,7 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
               DropdownButtonFormField<String>(
                 value: selectedTeacherId,
                 decoration: InputDecoration(
-                  labelText: context.l10n.appName,
+                  labelText: context.l10n.teacher,
                   border: const OutlineInputBorder(),
                 ),
                 items: widget.teachers.map((teacher) {
@@ -226,7 +230,7 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
               DropdownButtonFormField<String>(
                 value: selectedSubjectId,
                 decoration: InputDecoration(
-                  labelText: context.l10n.appName,
+                  labelText: context.l10n.subject,
                   border: const OutlineInputBorder(),
                 ),
                 items: widget.subjects.map((subject) {
@@ -253,7 +257,7 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
               DropdownButtonFormField<String>(
                 value: selectedClassroomId,
                 decoration: InputDecoration(
-                  labelText: context.l10n.appName,
+                  labelText: context.l10n.classroom,
                   border: const OutlineInputBorder(),
                 ),
                 items: widget.classrooms.map((classroom) {
@@ -292,7 +296,7 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: Text(context.l10n.appName, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(context.l10n.cancel, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
         ElevatedButton(
           onPressed: () {
@@ -318,7 +322,7 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
               Navigator.of(context).pop(session);
             }
           },
-          child: Text(context.l10n.appName, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(context.l10n.save, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ],
     );

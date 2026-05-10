@@ -16,6 +16,8 @@ import 'core/utils/l10n_extension.dart';
 import 'presentation/bloc/schedule/schedule_bloc.dart';
 import 'presentation/bloc/schedule/schedule_event.dart';
 import 'core/services/backup_service.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/background_worker_service.dart';
 
 // =============================================================================
 // ENTRY POINT
@@ -36,9 +38,16 @@ Future<void> main() async {
   ]);
 
   // ── تسجيل الـ dependencies (GetIt — نظام الجداول الأصلي)
-  configureDependencies();
+  await configureDependencies();
 
-  // ── التحقق من تشغيل النسخ الاحتياطي التلقائي
+  // ── تهيئة خدمات الإشعارات والعمل في الخلفية
+  await NotificationService().init();
+  await BackgroundWorkerService.init();
+  
+  // ── جدولة النسخ الاحتياطي اليومي في الخلفية
+  await BackgroundWorkerService.scheduleDailyBackup();
+
+  // ── التحقق من تشغيل النسخ الاحتياطي التلقائي (العمل الفوري عند الفتح)
   BackupService.checkAndRunAutoBackup();
 
   runApp(

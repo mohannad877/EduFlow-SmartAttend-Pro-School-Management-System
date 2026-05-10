@@ -56,24 +56,23 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
       final dayOfMonth = session.date.day;
 
       for (var record in recordsList) {
+        final currentStats = dailyStatsMap[dayOfMonth] ?? DayStats.empty();
         switch (record.status) {
           case 'present':
             totalPresent++;
-            dailyStatsMap[dayOfMonth] = (dailyStatsMap[dayOfMonth] ?? DayStats.empty())
-                .copyWith(present: dailyStatsMap[dayOfMonth]!.present + 1);
+            dailyStatsMap[dayOfMonth] = currentStats.copyWith(present: currentStats.present + 1);
             break;
           case 'absent':
             totalAbsent++;
-            dailyStatsMap[dayOfMonth] = (dailyStatsMap[dayOfMonth] ?? DayStats.empty())
-                .copyWith(absent: dailyStatsMap[dayOfMonth]!.absent + 1);
+            dailyStatsMap[dayOfMonth] = currentStats.copyWith(absent: currentStats.absent + 1);
             break;
           case 'late':
             totalLate++;
-            dailyStatsMap[dayOfMonth] = (dailyStatsMap[dayOfMonth] ?? DayStats.empty())
-                .copyWith(late: dailyStatsMap[dayOfMonth]!.late + 1);
+            dailyStatsMap[dayOfMonth] = currentStats.copyWith(late: currentStats.late + 1);
             break;
           case 'excused':
             totalExcused++;
+            // إذا كنت ترغب بتتبع المعذورين يومياً يمكنك إضافتها في DayStats أيضاً مستقبلاً
             break;
         }
       }

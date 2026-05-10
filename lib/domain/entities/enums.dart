@@ -64,6 +64,12 @@ enum QualityGrade {
   poor,
 }
 
+enum GapFillingStrategy {
+  strict,    // لا يتم ملء الفراغات أبداً
+  activity,  // ملء الفراغات بمواد النشاط (نشاط، مكتبة، مراجعة)
+  flexible,  // توزيع الفراغات على المواد الأساسية (تم رفضه كافتراضي ولكن يُترك كخيار)
+}
+
 extension WorkDayExtension on WorkDay {
   String getLocalizedName(BuildContext context) {
     switch (this) {

@@ -279,6 +279,7 @@ class GenerationConfig {
   final bool minimizeGaps;
   final bool balanceSubjectDistribution;
   final int? maxDailyDifference;
+  final GapFillingStrategy gapFillingStrategy;
   
   // 🔥 إعدادات التلدين المحاكي (Simulated Annealing)
   final bool enableSimulatedAnnealing;
@@ -324,6 +325,7 @@ class GenerationConfig {
     this.minimizeGaps = true,
     this.maxDailyDifference,
     this.balanceSubjectDistribution = true,
+    this.gapFillingStrategy = GapFillingStrategy.activity,
     this.enableSimulatedAnnealing = true,
     this.initialTemperature = 1000.0,
     this.coolingRate = 0.995,
@@ -380,19 +382,66 @@ class GenerationConfig {
   /// 📋 نسخ الإعدادات مع تعديلات
   GenerationConfig copyWith({
     int? maxRetries,
-    double? coolingRate,
+    int? maxIterationsPerPhase,
+    Duration? timeout,
+    Map<ConstraintType, double>? constraintWeights,
+    int? maxTeacherDailySessions,
+    int? minTeacherDailySessions,
+    bool? enforceConsecutiveSessions,
+    bool? minimizeGaps,
+    bool? balanceSubjectDistribution,
+    int? maxDailyDifference,
     bool? enableSimulatedAnnealing,
+    double? initialTemperature,
+    double? coolingRate,
+    double? minTemperature,
+    int? iterationsPerTemperature,
+    double? acceptanceThreshold,
+    bool? enableBacktracking,
+    int? backtrackingDepth,
+    int? backtrackingLimit,
+    BacktrackingStrategy? backtrackingStrategy,
     int? randomSeed,
-    CancellationToken? cancellationToken,
+    bool? enableParallelProcessing,
+    int? parallelThreads,
     void Function(GenerationProgress progress)? onProgress,
+    bool? enableDetailedLogging,
+    MetricsCollector? metricsCollector,
+    CancellationToken? cancellationToken,
+    /// إذا كانت [clearNonSendable] = true يتم حذف metricsCollector و cancellationToken و onProgress
+    bool clearNonSendable = false,
   }) => GenerationConfig(
     maxRetries: maxRetries ?? this.maxRetries,
-    coolingRate: coolingRate ?? this.coolingRate,
+    maxIterationsPerPhase: maxIterationsPerPhase ?? this.maxIterationsPerPhase,
+    timeout: timeout ?? this.timeout,
+    constraintWeights: constraintWeights ?? this.constraintWeights,
+    maxTeacherDailySessions: maxTeacherDailySessions ?? this.maxTeacherDailySessions,
+    minTeacherDailySessions: minTeacherDailySessions ?? this.minTeacherDailySessions,
+    enforceConsecutiveSessions: enforceConsecutiveSessions ?? this.enforceConsecutiveSessions,
+    minimizeGaps: minimizeGaps ?? this.minimizeGaps,
+    balanceSubjectDistribution: balanceSubjectDistribution ?? this.balanceSubjectDistribution,
+    maxDailyDifference: maxDailyDifference ?? this.maxDailyDifference,
     enableSimulatedAnnealing: enableSimulatedAnnealing ?? this.enableSimulatedAnnealing,
+    initialTemperature: initialTemperature ?? this.initialTemperature,
+    coolingRate: coolingRate ?? this.coolingRate,
+    minTemperature: minTemperature ?? this.minTemperature,
+    iterationsPerTemperature: iterationsPerTemperature ?? this.iterationsPerTemperature,
+    acceptanceThreshold: acceptanceThreshold ?? this.acceptanceThreshold,
+    enableBacktracking: enableBacktracking ?? this.enableBacktracking,
+    backtrackingDepth: backtrackingDepth ?? this.backtrackingDepth,
+    backtrackingLimit: backtrackingLimit ?? this.backtrackingLimit,
+    backtrackingStrategy: backtrackingStrategy ?? this.backtrackingStrategy,
     randomSeed: randomSeed ?? this.randomSeed,
-    cancellationToken: cancellationToken ?? this.cancellationToken,
-    onProgress: onProgress ?? this.onProgress,
+    enableParallelProcessing: enableParallelProcessing ?? this.enableParallelProcessing,
+    parallelThreads: parallelThreads ?? this.parallelThreads,
+    onProgress: clearNonSendable ? null : (onProgress ?? this.onProgress),
+    enableDetailedLogging: enableDetailedLogging ?? this.enableDetailedLogging,
+    metricsCollector: clearNonSendable ? null : (metricsCollector ?? this.metricsCollector),
+    cancellationToken: clearNonSendable ? null : (cancellationToken ?? this.cancellationToken),
   );
+
+  /// 🚀 إنشاء نسخة آمنة للإرسال عبر Isolate (تُزيل الكائنات غير القابلة للتسلسل)
+  GenerationConfig toIsolateSafe() => copyWith(clearNonSendable: true);
 }
 
 /// 🎯 استراتيجيات التراجع الذكي
@@ -874,7 +923,7 @@ class IntelligentScheduleGenerator {
     );
   }
 
-  /// 🔨 البناء الاستباقي المحسن باستخدام خوارزمية جشعة ذكية
+  /// 🔨 البناء الاستباقي المحسن باستخدام خوارزمية التراجع (Backtracking Engine)
   Future<_BuildResult> _constructInitialSchedule({
     required GenerationData data,
     required int dailySessions,
@@ -882,134 +931,201 @@ class IntelligentScheduleGenerator {
     required GenerationMode mode,
     required GenerationConfig config,
   }) async {
-    final schedule = <ScheduleEntry>[];
     final unassignedSlots = <UnassignedSlot>[];
-    final remainingHours = Map<String, int>.from(data.remainingHours);
     
-    // 🗂️ هياكل تتبع الإشغال (بتعقيد O(1) للبحث)
-    final classroomSlots = _OccupancyTracker();
-    final teacherSlots = _OccupancyTracker();
-    final teacherDailyLoad = <String, List<int>>{}; // teacherId -> [loadPerDay]
-
-    // 🎯 ترتيب الفصول حسب "صعوبة التخصيص" (Heuristic Ordering)
+    // 1️⃣ بناء قائمة بكل الخانات المسطحة (Slots)
+    final slots = <({Classroom classroom, int dayIndex, int sessionIndex})>[];
+    
+    // ترتيب الفصول حسب "صعوبة التخصيص" (Heuristic Ordering)
     final sortedClassrooms = List<Classroom>.from(data.classrooms)
       ..sort((a, b) {
-        // معيار الترتيب: عدد المواد × إجمالي الحصص المطلوبة
         final aScore = a.subjects.isEmpty ? 0 : a.subjects.length *
             a.subjects.map((s) => s.getHoursForClass(a.id)).reduce((x, y) => x + y);
         final bScore = b.subjects.isEmpty ? 0 : b.subjects.length *
             b.subjects.map((s) => s.getHoursForClass(b.id)).reduce((x, y) => x + y);
-        return bScore.compareTo(aScore); // الأكثر صعوبة أولاً
+        return bScore.compareTo(aScore);
       });
 
-    var totalAssignments = 0;
-    var failedAssignments = 0;
-
-    // 🔄 الحلقة الرئيسية للتخصيص
-    for (var dayIdx = 0; dayIdx < workDays.length; dayIdx++) {
-      // final workDay = workDays[dayIdx];
-      
-      for (var sessIdx = 0; sessIdx < dailySessions; sessIdx++) {
+    for (var sessIdx = 0; sessIdx < dailySessions; sessIdx++) {
+      final dayOrder = List<int>.generate(workDays.length, (i) => i);
+      final offset = sessIdx % workDays.length;
+      final rotatedDays = [...dayOrder.sublist(offset), ...dayOrder.sublist(0, offset)];
+      for (final dayIdx in rotatedDays) {
         for (final classroom in sortedClassrooms) {
-          // ⏭️ تخطي إذا كان الفصل مشغولاً
-          if (classroomSlots.isOccupied(classroomId: classroom.id, day: dayIdx, session: sessIdx)) {
-            continue;
-          }
+          slots.add((classroom: classroom, dayIndex: dayIdx, sessionIndex: sessIdx));
+        }
+      }
+    }
 
-          // 🎯 اختيار أفضل مادة لهذا الفتحة
-          final bestSubject = _selectBestSubjectForSlot(
+    var bestSchedule = <ScheduleEntry>[];
+    var bestRemainingHours = Map<String, int>.from(data.remainingHours);
+    var bestAssignedCount = 0;
+    var totalBacktrackIterations = 0;
+    
+    bool tryGenerate(bool allowEmpty) {
+      final maxRetries = allowEmpty ? 1 : 5;
+      for (int retry = 0; retry < maxRetries; retry++) {
+        final schedule = <ScheduleEntry>[];
+        final remainingHours = Map<String, int>.from(data.remainingHours);
+        final classroomSlots = _OccupancyTracker();
+        final teacherSlots = _OccupancyTracker();
+        final teacherDailyLoad = <String, List<int>>{};
+        
+        if (retry > 0) {
+          data.subjects.shuffle(_random);
+        }
+        
+        final stopwatch = Stopwatch()..start();
+        final timeout = const Duration(seconds: 4);
+
+        bool backtrack(int index) {
+          totalBacktrackIterations++;
+          if (stopwatch.elapsed > timeout) return false;
+          if (index >= slots.length) return true;
+
+          final slot = slots[index];
+          final classroom = slot.classroom;
+          final dayIdx = slot.dayIndex;
+          final sessIdx = slot.sessionIndex;
+
+          final candidateSubjects = _getValidSubjectsForSlot(
             classroomId: classroom.id,
             remainingHours: remainingHours,
             data: data,
             schedule: schedule,
             dayIdx: dayIdx,
             sessIdx: sessIdx,
-            teacherDailyLoad: teacherDailyLoad,
           );
 
-          if (bestSubject == null) continue;
-
-          // 👨‍🏫 اختيار أفضل معلم متاح
-          final bestTeacher = _selectBestTeacherForSlot(
-            subject: bestSubject,
-            dayIdx: dayIdx,
-            sessionIdx: sessIdx,
-            data: data,
-            schedule: schedule,
-            teacherDailyLoad: teacherDailyLoad,
-            teacherSlots: teacherSlots,
-            config: config,
-            mode: mode,
-          );
-
-          if (bestTeacher == null) {
-            failedAssignments++;
-            unassignedSlots.add(UnassignedSlot(
-              classroomId: classroom.id,
-              classroomName: classroom.name,
-              dayIndex: dayIdx,
-              sessionIndex: sessIdx,
-              reason: DomainStrings.generator.finishing,
-              blockingConstraint: ConstraintType.teacherAvailability,
-              suggestedSolutions: [
-                DomainStrings.generator.completed,
-                DomainStrings.generator.preprocessing,
-              ],
-            ));
-            continue;
+          final extendedCandidates = List<Subject?>.from(candidateSubjects);
+          if (allowEmpty) {
+            extendedCandidates.add(null);
           }
 
-          // ✅ إنشاء التعيين والتحقق النهائي
-          final entry = ScheduleEntry(
-            id: const Uuid().v4(),
-            teacherId: bestTeacher.id,
-            classroomId: classroom.id,
-            subjectId: bestSubject.id,
-            dayIndex: dayIdx,
-            sessionIndex: sessIdx,
-          );
+          // MRV Heuristic
+          extendedCandidates.sort((a, b) {
+            if (a == null && b != null) return 1;
+            if (b == null && a != null) return -1;
+            if (a == null && b == null) return 0;
+            final aHours = remainingHours[_key(classroom.id, a!.id)] ?? 0;
+            final bHours = remainingHours[_key(classroom.id, b!.id)] ?? 0;
+            return bHours.compareTo(aHours);
+          });
 
-          // 🛡️ التحقق من القيود الصلبة
-          final error = _validator.validateSession(
-            entry: entry,
-            teacher: bestTeacher,
-            classroom: classroom,
-            subject: bestSubject,
-            existingEntries: schedule,
-          );
+          for (final subject in extendedCandidates) {
+            if (subject == null) {
+              if (backtrack(index + 1)) return true;
+              continue;
+            }
 
-          if (error != null) {
-            failedAssignments++;
-            continue; // محاولة المادة التالية
+            final candidatesTeachers = data.teachers.where((t) {
+              if (!t.subjectIds.contains(subject.id)) return false;
+              if (teacherSlots.isOccupied(classroomId: t.id, day: dayIdx, session: sessIdx)) return false;
+              final workDay = workDays[dayIdx];
+              if (t.workDays.isNotEmpty && !t.workDays.contains(workDay)) return false;
+              final unavailable = t.unavailablePeriods[workDay];
+              if (unavailable != null && unavailable.contains(sessIdx)) return false;
+              final dailyLoad = teacherDailyLoad[t.id]?[dayIdx] ?? 0;
+              return dailyLoad < t.maxDailyHours;
+            }).toList();
+            
+            if (candidatesTeachers.isEmpty) continue;
+
+            candidatesTeachers.sort((a, b) {
+              final aLoad = (teacherDailyLoad[a.id] ?? []).fold(0, (s, v) => s + v);
+              final bLoad = (teacherDailyLoad[b.id] ?? []).fold(0, (s, v) => s + v);
+              return aLoad.compareTo(bLoad);
+            });
+
+            for (final teacher in candidatesTeachers) {
+              final entry = ScheduleEntry(
+                id: const Uuid().v4(),
+                teacherId: teacher.id,
+                classroomId: classroom.id,
+                subjectId: subject.id,
+                dayIndex: dayIdx,
+                sessionIndex: sessIdx,
+              );
+
+              final error = _validator.validateSession(
+                entry: entry,
+                teacher: teacher,
+                classroom: classroom,
+                subject: subject,
+                existingEntries: schedule,
+              );
+
+              if (error != null) continue;
+
+              // Assign
+              schedule.add(entry);
+              classroomSlots.markOccupied(classroomId: classroom.id, day: dayIdx, session: sessIdx);
+              teacherSlots.markOccupied(classroomId: teacher.id, day: dayIdx, session: sessIdx);
+              final key = _key(classroom.id, subject.id);
+              remainingHours[key] = remainingHours[key]! - 1;
+              teacherDailyLoad.putIfAbsent(teacher.id, () => List.filled(workDays.length, 0));
+              teacherDailyLoad[teacher.id]![dayIdx]++;
+
+              // Recurse
+              if (backtrack(index + 1)) return true;
+
+              // Unassign
+              schedule.removeLast();
+              classroomSlots.markFree(classroomId: classroom.id, day: dayIdx, session: sessIdx);
+              teacherSlots.markFree(classroomId: teacher.id, day: dayIdx, session: sessIdx);
+              remainingHours[key] = remainingHours[key]! + 1;
+              teacherDailyLoad[teacher.id]![dayIdx]--;
+            }
           }
 
-          // 🎉 تعيين ناجح - تحديث كل الهياكل
-          schedule.add(entry);
-          classroomSlots.markOccupied(classroomId: classroom.id, day: dayIdx, session: sessIdx);
-          teacherSlots.markOccupied(classroomId: bestTeacher.id, day: dayIdx, session: sessIdx);
-          
-          final key = _key(classroom.id, bestSubject.id);
-          remainingHours[key] = remainingHours[key]! - 1;
-          
-          teacherDailyLoad.putIfAbsent(bestTeacher.id, () => List.filled(workDays.length, 0));
-          teacherDailyLoad[bestTeacher.id]![dayIdx]++;
-          
-          totalAssignments++;
+          return false;
         }
+
+        if (backtrack(0)) {
+          bestSchedule = schedule;
+          bestRemainingHours = remainingHours;
+          return true;
+        }
+        
+        if (schedule.length > bestAssignedCount) {
+          bestAssignedCount = schedule.length;
+          bestSchedule = List.from(schedule);
+          bestRemainingHours = Map.from(remainingHours);
+        }
+      }
+      return false;
+    }
+
+    if (!tryGenerate(false)) {
+      _logger.warning("الخوارزمية لم تنجح في إيجاد حل مكتمل بنسبة 100%. جاري التفعيل للوضع الاحتياطي...");
+      tryGenerate(true);
+    }
+
+    // تحديد الفتحات الفارغة المتبقية
+    final assignedSlotsSet = bestSchedule.map((e) => '${e.classroomId}_${e.dayIndex}_${e.sessionIndex}').toSet();
+    for (final slot in slots) {
+      if (!assignedSlotsSet.contains('${slot.classroom.id}_${slot.dayIndex}_${slot.sessionIndex}')) {
+        unassignedSlots.add(UnassignedSlot(
+          classroomId: slot.classroom.id,
+          classroomName: slot.classroom.name,
+          dayIndex: slot.dayIndex,
+          sessionIndex: slot.sessionIndex,
+          reason: "Empty Slot (Fallback)",
+          blockingConstraint: ConstraintType.teacherAvailability,
+        ));
       }
     }
 
-    // 📊 تسجيل إحصائيات البناء
     _logger.info(DomainStrings.generator.validating);
 
     return _BuildResult(
-      schedule: schedule,
+      schedule: bestSchedule,
       unassignedSlots: unassignedSlots,
-      remainingHours: remainingHours,
-      totalIterations: totalAssignments + failedAssignments,
-      acceptedMoves: totalAssignments,
-      rejectedMoves: failedAssignments,
-      finalTemperature: 0, // سيتم تحديثه في مرحلة التحسين
+      remainingHours: bestRemainingHours,
+      totalIterations: totalBacktrackIterations,
+      acceptedMoves: bestSchedule.length,
+      rejectedMoves: totalBacktrackIterations - bestSchedule.length,
+      finalTemperature: 0,
     );
   }
 
@@ -1340,31 +1456,48 @@ class IntelligentScheduleGenerator {
 
   // ── Constructive phase helpers ────────────────────────────────────────────
 
-  Subject? _selectBestSubjectForSlot({
+  List<Subject> _getValidSubjectsForSlot({
     required String classroomId,
     required Map<String, int> remainingHours,
     required GenerationData data,
     required List<ScheduleEntry> schedule,
     required int dayIdx,
     required int sessIdx,
-    required Map<String, List<int>> teacherDailyLoad,
   }) {
-    // Return the subject with most remaining hours (greedy)
-    Subject? best;
-    var maxHours = 0;
+    final validSubjects = <Subject>[];
+    
+    // Find subjects already scheduled today for this class to avoid duplicates
+    final subjectsToday = schedule
+        .where((e) => e.classroomId == classroomId && e.dayIndex == dayIdx)
+        .map((e) => e.subjectId)
+        .toSet();
+
     for (final subject in data.subjects) {
       final key = _key(classroomId, subject.id);
       final hours = remainingHours[key] ?? 0;
-      if (hours > maxHours) {
-        maxHours = hours;
-        best = subject;
+      if (hours > 0) {
+        validSubjects.add(subject);
       }
     }
-    return best;
+
+    // Sort: 1. Not scheduled today (Soft Constraint), 2. Most remaining hours
+    validSubjects.sort((a, b) {
+      final aToday = subjectsToday.contains(a.id) ? 1 : 0;
+      final bToday = subjectsToday.contains(b.id) ? 1 : 0;
+      
+      if (aToday != bToday) return aToday.compareTo(bToday); // 0 (not today) comes first
+      
+      final aHours = remainingHours[_key(classroomId, a.id)] ?? 0;
+      final bHours = remainingHours[_key(classroomId, b.id)] ?? 0;
+      return bHours.compareTo(aHours);
+    });
+
+    return validSubjects;
   }
 
   Teacher? _selectBestTeacherForSlot({
     required Subject subject,
+    required String classroomId,
     required int dayIdx,
     required int sessionIdx, // تم إضافة هذا المعامل
     required GenerationData data,
@@ -1372,6 +1505,7 @@ class IntelligentScheduleGenerator {
     required Map<String, List<int>> teacherDailyLoad,
     required _OccupancyTracker teacherSlots,
     required GenerationConfig config,
+    required List<WorkDay> workDays,
     required GenerationMode mode,
   }) {
     final candidates = data.teachers.where((t) {
@@ -1381,8 +1515,9 @@ class IntelligentScheduleGenerator {
       if (teacherSlots.isOccupied(classroomId: t.id, day: dayIdx, session: sessionIdx)) return false;
       
       // التأكد من أن اليوم من أيام عمل المعلم
-      final workDay = WorkDay.values[dayIdx % WorkDay.values.length];
-      if (!t.workDays.contains(workDay)) return false;
+      // إذا كانت قائمة أيام العمل فارغة (القيمة الافتراضية) نعتبره متاحاً لجميع الأيام
+      final workDay = workDays[dayIdx];
+      if (t.workDays.isNotEmpty && !t.workDays.contains(workDay)) return false;
       
       // التحقق من فترات الاعتذار (عدم التوفر)
       final unavailable = t.unavailablePeriods[workDay];
@@ -1392,8 +1527,20 @@ class IntelligentScheduleGenerator {
       return dailyLoad < t.maxDailyHours;
     }).toList();
     if (candidates.isEmpty) return null;
+    
+    // البحث عن المعلم الذي تم تعيينه مسبقاً لهذه المادة في هذا الفصل
+    final previouslyAssignedTeacherId = schedule.isEmpty ? null : schedule
+        .where((e) => e.classroomId == classroomId && e.subjectId == subject.id)
+        .map((e) => e.teacherId)
+        .firstOrNull;
+
     // Balanced: pick teacher with minimum weekly load
     candidates.sort((a, b) {
+      // 1. الأولوية المطلقة للمعلم الذي سبق تعيينه لنفس المادة في نفس الفصل
+      if (a.id == previouslyAssignedTeacherId && b.id != previouslyAssignedTeacherId) return -1;
+      if (b.id == previouslyAssignedTeacherId && a.id != previouslyAssignedTeacherId) return 1;
+
+      // 2. إذا لم يكن أي منهما، نعتمد على العبء الدراسي لتقليل ضغط المعلمين
       final aLoad = (teacherDailyLoad[a.id] ?? []).fold(0, (s, v) => s + v);
       final bLoad = (teacherDailyLoad[b.id] ?? []).fold(0, (s, v) => s + v);
       return aLoad.compareTo(bLoad);

@@ -1446,5 +1446,8 @@
   "worstMonthAttendance": "Worst Month Attendance",
   "yearly": "Yearly",
   "yearReport": "Year Report",
-  "yes": "Yes"
+  "yes": "Yes",
+  "generationMode": "Generation Mode",
+  "maxRetries": "Max Retries",
+  "maxTeacherDailyLimit": "Max Daily Periods (optional)"
 }

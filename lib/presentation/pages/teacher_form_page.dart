@@ -248,23 +248,20 @@ class _TeacherFormPageState extends State<TeacherFormPage> {
                                     classState.classrooms.map((classroom) {
                                   final isSelected =
                                       _selectedClassIds.contains(classroom.id);
-                                  return FilterChip(
-                                    label: Text(classroom.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedClassIds.add(classroom.id);
-                                        } else {
-                                          _selectedClassIds
-                                              .remove(classroom.id);
-                                        }
-                                      });
-                                    },
-                                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                    selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                    checkmarkColor: Theme.of(context).colorScheme.primary,
-                                  );
+                                    return FilterChip(
+                                      label: Text(classroom.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      selected: isSelected,
+                                      onSelected: (selected) {
+                                        setState(() {
+                                          if (selected) {
+                                            _selectedClassIds.add(classroom.id);
+                                          } else {
+                                            _selectedClassIds
+                                                .remove(classroom.id);
+                                          }
+                                        });
+                                      },
+                                    );
                                 }).toList(),
                               ),
                               const SizedBox(height: 8),
@@ -381,9 +378,6 @@ class _TeacherFormPageState extends State<TeacherFormPage> {
           }
         });
       },
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-      selectedColor: AppColors.success.withOpacity(0.15),
-      checkmarkColor: AppColors.success,
     );
   }
 

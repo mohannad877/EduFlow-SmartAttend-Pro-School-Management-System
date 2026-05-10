@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:school_schedule_app/domain/entities/school.dart';
 import 'package:school_schedule_app/domain/entities/subject.dart';
@@ -198,7 +199,7 @@ extension ScheduleMapper on Schedule {
       schoolId: schoolId,
       creatorId: creatorId,
       status: status,
-      metadata: null,
+      metadata: metadata != null ? jsonEncode(metadata) : null,
     );
   }
 }
@@ -215,7 +216,7 @@ extension ScheduleDtoMapper on ScheduleDto {
       creatorId: creatorId,
       status: status,
       sessions: sessions,
-      metadata: const {},
+      metadata: metadata != null ? jsonDecode(metadata!) : const {},
     );
   }
 }

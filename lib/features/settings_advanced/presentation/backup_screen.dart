@@ -321,14 +321,21 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+        gradient: LinearGradient(
+          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.8)],
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          )
+        ],
       ),
       child: Row(
         children: [
@@ -345,11 +352,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.l10n.protectData, style: AppTextStyles.titleMedium.copyWith(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
+                Text(context.l10n.protectData, style: AppTextStyles.titleMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 6),
                 Text(
                   context.l10n.actualTables,
-                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                  style: AppTextStyles.caption.copyWith(color: Colors.white.withOpacity(0.9)),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -365,41 +372,67 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Widget _buildAutoBackupSection() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Theme.of(context).shadowColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
              Row(
               children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.autorenew_rounded, color: Theme.of(context).primaryColor, size: 24),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(context.l10n.enableAutoBackup, style: TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      SizedBox(height: 4),
+                      Text(context.l10n.enableAutoBackup, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      SizedBox(height: 6),
                       Text(context.l10n.backgroundBackup, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
-                DropdownButton<int>(
-                  value: _autoBackupInterval,
-                  items: [
-                    DropdownMenuItem(value: 0, child: Text(context.l10n.stop, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: 1, child: Text(context.l10n.daily, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: 7, child: Text(context.l10n.weekly, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: 30, child: Text(context.l10n.monthly, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _autoBackupInterval = val);
-                      BackupService.setAutoBackupInterval(val);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${context.l10n.autoEnabled}: ${val == 0 ? context.l10n.stop : val == 1 ? context.l10n.daily : val == 7 ? context.l10n.weekly : context.l10n.monthly}', maxLines: 1, overflow: TextOverflow.ellipsis))
-                      );
-                    }
-                  },
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: _autoBackupInterval,
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: Theme.of(context).primaryColor),
+                      items: [
+                        DropdownMenuItem(value: 0, child: Text(context.l10n.stop, style: TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: 1, child: Text(context.l10n.daily, style: TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: 7, child: Text(context.l10n.weekly, style: TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: 30, child: Text(context.l10n.monthly, style: TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _autoBackupInterval = val);
+                          BackupService.setAutoBackupInterval(val);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${context.l10n.autoEnabled}: ${val == 0 ? context.l10n.stop : val == 1 ? context.l10n.daily : val == 7 ? context.l10n.weekly : context.l10n.monthly}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            )
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -411,28 +444,31 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
   Widget _buildCreateBackupSection() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Theme.of(context).shadowColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.save_rounded, color: AppColors.success, size: 28),
+                  child: const Icon(Icons.cloud_upload_rounded, color: AppColors.success, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(context.l10n.newBackup, style: AppTextStyles.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(context.l10n.newBackup, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 6),
                       Text(context.l10n.saveDbSeparate, style: AppTextStyles.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
@@ -462,7 +498,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               ),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -470,11 +506,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                     onPressed: _backupState == _OperationState.running ? null : _createBackup,
                     icon: _backupState == _OperationState.running
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.cloud_upload_rounded),
+                        : const Icon(Icons.save_alt_rounded),
                     label: Text(_backupState == _OperationState.running ? context.l10n.saving : context.l10n.createBackupNow, maxLines: 1, overflow: TextOverflow.ellipsis),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.success,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
                     ),
                   ),
                 ),

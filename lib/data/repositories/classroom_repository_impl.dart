@@ -12,9 +12,16 @@ class ClassroomRepositoryImpl implements IClassroomRepository {
   ClassroomRepositoryImpl(this._db);
 
   @override
-  Future<void> deleteClassroom(String id) {
-    return (_db.delete(_db.classroomsTable)..where((t) => t.id.equals(id)))
-        .go();
+  Future<void> deleteClassroom(String id) async {
+    await _db.transaction(() async {
+      // Cascade: حذف جميع حصص هذا الفصل من الجداول
+      await (_db.delete(_db.sessionsTable)
+            ..where((t) => t.classId.equals(id)))
+          .go();
+      // ثم حذف الفصل نفسه
+      await (_db.delete(_db.classroomsTable)..where((t) => t.id.equals(id)))
+          .go();
+    });
   }
 
   @override

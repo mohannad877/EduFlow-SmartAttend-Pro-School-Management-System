@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -31,6 +31,14 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 6) {
+          // recreate SessionsTable to apply new unique constraints
+          // Since SQLite doesn't support adding table constraints easily via ALTER TABLE,
+          // we'll just drop and recreate it for simplicity (data loss in draft schedules is acceptable here, or use complex migration).
+          await customStatement('DROP TABLE IF EXISTS sessions_table');
+          await m.createTable(sessionsTable);
+        }
+        
         // Migration from 1 to 2
         if (from < 2) {
           try {

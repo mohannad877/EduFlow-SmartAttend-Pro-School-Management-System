@@ -13,6 +13,9 @@ import 'package:school_schedule_app/presentation/bloc/subject/subject_state.dart
 import 'package:school_schedule_app/presentation/bloc/classroom/classroom_bloc.dart';
 import 'package:school_schedule_app/presentation/bloc/classroom/classroom_event.dart';
 import 'package:school_schedule_app/presentation/bloc/classroom/classroom_state.dart';
+import 'package:school_schedule_app/presentation/bloc/teacher/teacher_bloc.dart';
+import 'package:school_schedule_app/presentation/bloc/teacher/teacher_event.dart';
+import 'package:school_schedule_app/presentation/bloc/teacher/teacher_state.dart';
 
 class SubjectFormPage extends StatefulWidget {
   final Subject? subject;
@@ -35,6 +38,7 @@ class _SubjectFormPageState extends State<SubjectFormPage> {
   
   // Map classId to TextEditingController for periods
   final Map<String, TextEditingController> _classPeriodsControllers = {};
+  List<String> _selectedTeacherIds = [];
   
   final List<Color> _availableColors = [
     Colors.blue,
@@ -65,6 +69,7 @@ class _SubjectFormPageState extends State<SubjectFormPage> {
       widget.subject!.classPeriods.forEach((classId, periods) {
         _classPeriodsControllers[classId] = TextEditingController(text: periods.toString());
       });
+      _selectedTeacherIds = List.from(widget.subject!.qualifiedTeacherIds);
     }
   }
 
@@ -85,6 +90,7 @@ class _SubjectFormPageState extends State<SubjectFormPage> {
       providers: [
         BlocProvider(create: (context) => GetIt.I<SubjectBloc>()),
         BlocProvider(create: (context) => GetIt.I<ClassroomBloc>()..add(LoadClassrooms())),
+        BlocProvider(create: (context) => GetIt.I<TeacherBloc>()..add(LoadTeachers())),
       ],
       child: Scaffold(
         appBar: PremiumAppBar(
@@ -277,6 +283,44 @@ class _SubjectFormPageState extends State<SubjectFormPage> {
                         },
                       ),
                       const SizedBox(height: 24),
+                      Text(
+                        context.l10n.teachers,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 16),
+                      BlocBuilder<TeacherBloc, TeacherState>(
+                        builder: (context, state) {
+                          if (state is TeacherLoading) {
+                            return const Center(child: CircularProgressIndicator());
+                          } else if (state is TeachersLoaded) {
+                            if (state.teachers.isEmpty) {
+                              return Text(context.l10n.noTeachersFound, maxLines: 1, overflow: TextOverflow.ellipsis);
+                            }
+                            return Wrap(
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: state.teachers.map((teacher) {
+                                final isSelected = _selectedTeacherIds.contains(teacher.id);
+                                return FilterChip(
+                                  label: Text(teacher.fullName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedTeacherIds.add(teacher.id);
+                                      } else {
+                                        _selectedTeacherIds.remove(teacher.id);
+                                      }
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                      const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () => _saveSubject(context),
                         child: Text(context.l10n.save, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -309,7 +353,7 @@ class _SubjectFormPageState extends State<SubjectFormPage> {
         priority: _selectedPriority,
         requiresLab: _requiresLab,
         requiresProjector: _requiresProjector,
-        qualifiedTeacherIds: widget.subject?.qualifiedTeacherIds ?? [],
+        qualifiedTeacherIds: _selectedTeacherIds,
       );
 
       if (widget.subject == null) {

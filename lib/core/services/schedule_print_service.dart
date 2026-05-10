@@ -91,26 +91,35 @@ class SchedulePrintService {
     SchedulePdfStrings strings,
   ) async {
     final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicFontBold = await PdfGoogleFonts.cairoBold();
     final teacherSessions = sessions.where((s) => s.teacherId == teacher.id).toList();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: format,
         margin: const pw.EdgeInsets.all(AppSpacing.xl),
+        theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFontBold),
         header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             pw.Text(strings.teacherScheduleTitle,
-                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, font: arabicFontBold),
+                textDirection: pw.TextDirection.rtl),
             if (settings.showTeacherName)
               pw.Text(teacher.fullName,
-                  style: pw.TextStyle(fontSize: 16)),
+                  style: pw.TextStyle(fontSize: 16, font: arabicFont),
+                  textDirection: pw.TextDirection.rtl),
             pw.Divider(),
           ],
         ),
         build: (context) => [
           pw.TableHelper.fromTextArray(
             headers: [strings.dayLabel, strings.periodLabel, strings.subjectLabel, strings.classroomLabel],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: arabicFontBold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.blue700),
+            cellStyle: pw.TextStyle(font: arabicFont),
+            cellAlignment: pw.Alignment.center,
             data: teacherSessions
                 .map((s) => [
                       strings.resolveDay(s.day.name),
@@ -120,7 +129,6 @@ class SchedulePrintService {
                     ])
                 .toList(),
             border: pw.TableBorder.all(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
         ],
       ),
@@ -139,24 +147,34 @@ class SchedulePrintService {
     SchedulePdfStrings strings,
   ) async {
     final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicFontBold = await PdfGoogleFonts.cairoBold();
     final classSessions = sessions.where((s) => s.classId == classroom.id).toList();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: format,
         margin: const pw.EdgeInsets.all(AppSpacing.xl),
+        theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFontBold),
         header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             pw.Text(strings.classroomScheduleTitle,
-                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.Text(classroom.name, style: pw.TextStyle(fontSize: 16)),
+                style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, font: arabicFontBold),
+                textDirection: pw.TextDirection.rtl),
+            pw.Text(classroom.name,
+                style: pw.TextStyle(fontSize: 16, font: arabicFont),
+                textDirection: pw.TextDirection.rtl),
             pw.Divider(),
           ],
         ),
         build: (context) => [
           pw.TableHelper.fromTextArray(
             headers: [strings.dayLabel, strings.periodLabel, strings.subjectLabel, strings.teacherLabel],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: arabicFontBold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.blue700),
+            cellStyle: pw.TextStyle(font: arabicFont),
+            cellAlignment: pw.Alignment.center,
             data: classSessions
                 .map((s) => [
                       strings.resolveDay(s.day.name),
@@ -166,7 +184,6 @@ class SchedulePrintService {
                     ])
                 .toList(),
             border: pw.TableBorder.all(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           ),
         ],
       ),
@@ -185,22 +202,29 @@ class SchedulePrintService {
     SchedulePdfStrings strings,
   ) async {
     final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicFontBold = await PdfGoogleFonts.cairoBold();
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: format,
         margin: const pw.EdgeInsets.all(AppSpacing.xl),
+        theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFontBold),
         header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
             pw.Text(strings.masterScheduleTitle,
-                style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, font: arabicFontBold),
+                textDirection: pw.TextDirection.rtl),
             pw.Divider(),
           ],
         ),
         build: (context) => [
           pw.TableHelper.fromTextArray(
             headers: [strings.dayLabel, strings.periodLabel, strings.subjectLabel, strings.teacherLabel, strings.classroomLabel],
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: arabicFontBold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo700),
+            cellStyle: pw.TextStyle(font: arabicFont),
             data: sessions
                 .map((s) => [
                       strings.resolveDay(s.day.name),
@@ -211,7 +235,6 @@ class SchedulePrintService {
                     ])
                 .toList(),
             border: pw.TableBorder.all(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             cellAlignment: pw.Alignment.center,
           ),
         ],

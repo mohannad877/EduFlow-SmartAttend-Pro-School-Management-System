@@ -27,16 +27,14 @@ class ClassroomListPage extends StatelessWidget {
               title: Text(context.l10n.classes, maxLines: 1, overflow: TextOverflow.ellipsis),
               centerTitle: true,
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+            floatingActionButton: FloatingActionButton(
               onPressed: () {
                 final bloc = context.read<ClassroomBloc>();
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ClassroomFormPage())).then((_) {
                   if (context.mounted) bloc.add(LoadClassrooms());
                 });
               },
-              icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-              label: Text(context.l10n.addClassroom, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: const Icon(Icons.add),
             ).animate().scale(),
             body: BlocConsumer<ClassroomBloc, ClassroomState>(
               listener: (context, state) {

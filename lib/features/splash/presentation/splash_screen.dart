@@ -293,10 +293,10 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage>
         SlideEffect(begin: Offset(0, 0.3), end: Offset.zero, duration: Duration(milliseconds: 800), curve: Curves.easeOutQuad),
       ],
       child: ShaderMask(
-        shaderCallback: (bounds) => LinearGradient(
+        shaderCallback: (bounds) => const LinearGradient(
           colors: [Colors.white, Colors.white70],
-          begin: AlignmentDirectional.topStart,
-          end: AlignmentDirectional.bottomEnd,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ).createShader(bounds),
         child: Text(
           context.l10n.appName,
@@ -330,7 +330,7 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage>
           border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Text(
-          context.l10n.studentDeleted,
+          context.l10n.welcome,
           style: AppTextStyles.body1.copyWith(
             color: Colors.white.withOpacity(0.9),
             letterSpacing: 1.2,
@@ -381,7 +381,7 @@ class _SplashScreenPageState extends ConsumerState<SplashScreenPage>
           const Icon(Icons.hourglass_empty, size: 16, color: Colors.white70),
           const SizedBox(width: 8),
           Text(
-            context.l10n.selectGradeStudent,
+            context.l10n.initializing,
             style: AppTextStyles.caption.copyWith(color: Colors.white70),
           maxLines: 1, overflow: TextOverflow.ellipsis),
         ],

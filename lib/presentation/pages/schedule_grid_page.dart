@@ -304,63 +304,44 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
   }
 
   // ==========================================================================
-  // 2. SHIMMER LOADING — Professional skeleton placeholder
+  // 2. SHIMMER LOADING — Premium skeleton placeholder
   // ==========================================================================
   Widget _buildShimmerLoading() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
-    final highlightColor = isDark ? Colors.grey.shade700 : Colors.grey.shade100;
+    final baseColor = isDark ? Colors.grey.shade900 : Colors.grey.shade100;
+    final highlightColor = isDark ? Colors.grey.shade800 : Colors.white;
 
     return ShimmerEffect(
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         child: Column(
           children: [
-            // Segmented button placeholder
-            _shimmerBox(height: 48, width: double.infinity, radius: 24),
-            const SizedBox(height: 12),
-            // Dropdown placeholder
-            _shimmerBox(height: 56, width: double.infinity, radius: 14),
-            const SizedBox(height: 16),
-            // Grid header
-            Row(
-              children: [
-                _shimmerBox(height: 40, width: _dayColumnWidth, radius: 8),
-                const SizedBox(width: 8),
-                ...List.generate(
-                  5,
-                  (_) => Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child:
-                        _shimmerBox(height: 40, width: _cellWidth, radius: 8),
-                  ),
-                ),
-              ],
+            // View toggle placeholder
+            Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
-            const SizedBox(height: 8),
-            // Grid rows
-            ...List.generate(
-              5,
-              (_) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    _shimmerBox(
-                        height: _cellHeight, width: _dayColumnWidth, radius: 12),
-                    const SizedBox(width: 8),
-                    ...List.generate(
-                      5,
-                      (_) => Padding(
-                        padding: const EdgeInsetsDirectional.only(end: 8),
-                        child: _shimmerBox(
-                            height: _cellHeight,
-                            width: _cellWidth,
-                            radius: 12),
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 16),
+            // Entity Selector placeholder
+            Container(
+              height: 64,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Grid placeholder
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
                 ),
               ),
             ),
@@ -370,26 +351,17 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
     );
   }
 
-  Widget _shimmerBox({
-    required double height,
-    required double width,
-    required double radius,
-  }) {
-    return Container(
-      height: height,
-      width: width,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-
   // ==========================================================================
   // 3. STATE LISTENER — Snackbars & dialogs
   // ==========================================================================
   void _handleStateListener(BuildContext context, ScheduleState state) {
     if (state is ScheduleError) {
+      if (state.message == 'no_active_schedule') {
+        // Suppress the snackbar for no_active_schedule since the empty state UI handles it
+        // However, if it must be shown, we translate it:
+        // _showSnackbar(context, context.l10n.noActiveSchedule, isError: true);
+        return; 
+      }
       _showSnackbar(context, state.message, isError: true);
     } else if (state is ScheduleLoaded) {
       if (state.actionSuccess != null) {
@@ -403,13 +375,36 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
               ValidationSummaryDialog(result: state.validationResult!),
         );
       }
+      
+      if (state is ScheduleGenerationPartialSuccess) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                const SizedBox(width: 8),
+                Text(context.l10n.scheduleStats),
+              ],
+            ),
+            content: Text(context.l10n.partialScheduleGenerated(state.unassignedSlots.length)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(context.l10n.ok),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
   void _showSnackbar(BuildContext context, String message,
       {required bool isError}) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -430,8 +425,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
             ? SnackBarAction(
                 label: context.l10n.dismiss,
                 textColor: Colors.white,
-                onPressed: () =>
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                onPressed: () => messenger.hideCurrentSnackBar(),
               )
             : null,
       ),
@@ -581,7 +575,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
   }
 
   // ==========================================================================
-  // 4. EMPTY STATE — Professional & inviting
+  // 4. EMPTY STATE — Premium & inviting
   // ==========================================================================
   Widget _buildEmptyState(BuildContext innerContext) {
     return Center(
@@ -592,51 +586,66 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
           children: [
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 600),
+              duration: const Duration(milliseconds: 800),
               curve: Curves.elasticOut,
               builder: (context, value, child) {
                 return Transform.scale(scale: value, child: child);
               },
               child: Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .primaryColor
-                      .withOpacity(0.08),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor.withOpacity(0.2),
+                      Theme.of(context).primaryColor.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    )
+                  ],
                 ),
                 child: Icon(
-                  Icons.calendar_today_outlined,
-                  size: 80,
-                  color: Theme.of(context).primaryColor.withOpacity(0.5),
+                  Icons.auto_awesome_mosaic_rounded,
+                  size: 96,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
             Text(
               context.l10n.noActiveSchedule,
               maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               context.l10n.noActiveScheduleDesc,
               maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             FilledButton.icon(
               icon: const Icon(Icons.auto_awesome),
               label: Text(context.l10n.generateSchedule, maxLines: 1, overflow: TextOverflow.ellipsis),
               style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                textStyle: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 4,
+                shadowColor: Theme.of(context).primaryColor.withOpacity(0.5),
               ),
               onPressed: () {
                 final bloc = innerContext.read<ScheduleBloc>();
@@ -722,46 +731,62 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
   }
 
   // ==========================================================================
-  // VIEW TOGGLE
+  // VIEW TOGGLE & ENTITY SELECTOR
   // ==========================================================================
   Widget _buildViewToggle(BuildContext context, ScheduleLoaded state) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      child: SegmentedButton<String>(
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return Theme.of(context).primaryColor;
-            }
-            return Theme.of(context).colorScheme.surface;
-          }),
-          foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return Colors.white;
-            }
-            return Theme.of(context).colorScheme.onSurface;
-          }),
-          shape: WidgetStateProperty.all(RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12))),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(16),
         ),
-        segments: [
-          ButtonSegment(
-            value: 'classroom',
-            icon: const Icon(Icons.class_, size: 18),
-            label: Text(context.l10n.classroomsLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-          ButtonSegment(
-            value: 'teacher',
-            icon: const Icon(Icons.person, size: 18),
-            label: Text(context.l10n.teachersLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-        ],
-        selected: {state.viewMode},
-        onSelectionChanged: (selection) {
-          context
-              .read<ScheduleBloc>()
-              .add(ToggleViewMode(selection.first));
-        },
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildToggleButton(
+                context,
+                title: context.l10n.classroomsLabel,
+                icon: Icons.class_outlined,
+                isSelected: state.viewMode == 'classroom',
+                onTap: () => context.read<ScheduleBloc>().add(const ToggleViewMode('classroom')),
+              ),
+            ),
+            Expanded(
+              child: _buildToggleButton(
+                context,
+                title: context.l10n.teachersLabel,
+                icon: Icons.person_outline,
+                isSelected: state.viewMode == 'teacher',
+                onTap: () => context.read<ScheduleBloc>().add(const ToggleViewMode('teacher')),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleButton(BuildContext context, {required String title, required IconData icon, required bool isSelected, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected ? [BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: isSelected ? Colors.white : Theme.of(context).iconTheme.color),
+            const SizedBox(width: 8),
+            Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }
@@ -783,61 +808,72 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
         : null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Card(
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_borderRadius)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .primaryColor
-                      .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Theme.of(context).primaryColor.withOpacity(0.8), Theme.of(context).primaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Icon(
-                  isClassroom ? Icons.class_ : Icons.person,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: validValue,
-                    isExpanded: true,
-                    hint: Text(
-                      isClassroom
-                          ? context.l10n.appName
-                          : context.l10n.appName,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                    icon: const Icon(Icons.expand_more),
-                    style: const TextStyle(fontSize: 15),
-                    items: items
-                        .map((e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value, maxLines: 1, overflow: TextOverflow.ellipsis),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      context.read<ScheduleBloc>().add(
-                            isClassroom
-                                ? SelectClassroom(value)
-                                : SelectTeacher(value),
-                          );
-                    },
+              child: Icon(
+                isClassroom ? Icons.class_ : Icons.person,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: validValue,
+                  isExpanded: true,
+                  hint: Text(
+                    isClassroom
+                        ? context.l10n.selectClassroom
+                        : context.l10n.selectTeacher,
+                    style: TextStyle(color: Theme.of(context).hintColor),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
                   ),
+                  icon: Icon(Icons.keyboard_arrow_down_rounded, color: Theme.of(context).primaryColor),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  items: items
+                      .map((e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    context.read<ScheduleBloc>().add(
+                          isClassroom
+                              ? SelectClassroom(value)
+                              : SelectTeacher(value),
+                        );
+                  },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -850,99 +886,108 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
       String selectedId, bool isClassroomView) {
     final dailySessions = state.dailySessions;
     final workDays = state.workDays;
-    final totalWidth = _dayColumnWidth + (dailySessions * _cellWidth) + 32;
-    final totalHeight =
-        _headerHeight + (workDays * _cellHeight) + 16;
+    List<WorkDay> daysToRender = [];
+    if (state.generationMetadata != null && state.generationMetadata!['workDays'] != null) {
+      final names = state.generationMetadata!['workDays'] as List<dynamic>;
+      daysToRender = names.map((n) => WorkDay.values.firstWhere((e) => e.name == n, orElse: () => WorkDay.sunday)).toList();
+    }
+    if (daysToRender.isEmpty) {
+      daysToRender = [WorkDay.sunday, WorkDay.monday, WorkDay.tuesday, WorkDay.wednesday, WorkDay.thursday];
+      if (workDays == 6) daysToRender.add(WorkDay.saturday);
+    }
+    final int actualWorkDays = daysToRender.length;
+    final tableWidth = _dayColumnWidth + (dailySessions * _cellWidth);
+    final tableHeight = _headerHeight + (actualWorkDays * _cellHeight);
 
-    return InteractiveViewer(
-      transformationController: _transformationController,
-      minScale: 0.4,
-      maxScale: 2.5,
-      boundaryMargin: const EdgeInsets.all(AppSpacing.xl),
-      child: Center(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Container(
-            constraints: BoxConstraints(
-              minWidth: totalWidth,
-              minHeight: totalHeight,
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return InteractiveViewer(
+          transformationController: _transformationController,
+          minScale: 0.4,
+          maxScale: 2.5,
+          boundaryMargin: const EdgeInsets.all(AppSpacing.xl),
+          constrained: false,
+          child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Card(
-              elevation: 3,
-              shadowColor: Colors.black.withOpacity(0.08),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_borderRadius)),
-              clipBehavior: Clip.antiAlias,
-              child: Table(
-                defaultColumnWidth: const FixedColumnWidth(_cellWidth),
-                border: TableBorder(
-                  horizontalInside: BorderSide(
-                      color: Theme.of(context).dividerColor, width: 0.5),
-                  verticalInside: BorderSide(
-                      color: Theme.of(context).dividerColor, width: 0.5),
-                  borderRadius:
-                      BorderRadius.circular(_borderRadius),
-                ),
-                columnWidths: const {
-                  0: FixedColumnWidth(_dayColumnWidth),
-                },
-                children: [
-                  // --- Header Row ---
-                  TableRow(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .primaryColor
-                          .withOpacity(0.07),
-                    ),
-                    children: [
-                      _buildHeaderCell(context.l10n.appName, isCorner: true),
-                      ...List.generate(
-                        dailySessions,
-                        (i) => _buildHeaderCell(context.l10n.periodLabel('${i + 1}')),
-                      ),
-                    ],
+            child: SizedBox(
+              width: tableWidth + AppSpacing.md * 2,
+              height: tableHeight + AppSpacing.md * 2,
+              child: Card(
+                elevation: 3,
+                shadowColor: Colors.black.withOpacity(0.08),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_borderRadius)),
+                clipBehavior: Clip.antiAlias,
+                child: Table(
+                  defaultColumnWidth: const FixedColumnWidth(_cellWidth),
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                        color: Theme.of(context).dividerColor, width: 0.5),
+                    verticalInside: BorderSide(
+                        color: Theme.of(context).dividerColor, width: 0.5),
+                    borderRadius:
+                        BorderRadius.circular(_borderRadius),
                   ),
-                  // --- Day Rows ---
-                  ...List.generate(workDays, (dayIndex) {
-                    final day = WorkDay.values[dayIndex];
-                    final sessionsForDay = state.schedule.sessions
-                        .where((s) => s.day == day)
-                        .toList();
-                    return TableRow(
+                  columnWidths: const {
+                    0: FixedColumnWidth(_dayColumnWidth),
+                  },
+                  children: [
+                    // --- Header Row ---
+                    TableRow(
                       decoration: BoxDecoration(
-                      color: dayIndex.isEven
-                          ? Theme.of(context).colorScheme.surfaceContainerLowest
-                          : null,
+                        color: Theme.of(context)
+                            .primaryColor
+                            .withOpacity(0.07),
                       ),
                       children: [
-                        _buildDayCell(day),
-                        ...List.generate(dailySessions, (sessionIdx) {
-                          final session = _findSession(
-                            sessionsForDay,
-                            sessionIdx + 1,
-                            selectedId,
-                            isClassroomView,
-                          );
-                          return _buildSessionCell(
-                            context,
-                            session,
-                            state,
-                            day,
-                            sessionIdx,
-                            selectedId,
-                            isClassroomView,
-                          );
-                        }),
+                        _buildHeaderCell(context.l10n.schedule, isCorner: true),
+                        ...List.generate(
+                          dailySessions,
+                          (i) => _buildHeaderCell(context.l10n.periodLabel('${i + 1}')),
+                        ),
                       ],
-                    );
-                  }),
-                ],
+                    ),
+                    // --- Day Rows ---
+                    ...List.generate(actualWorkDays, (dayIndex) {
+                      final day = daysToRender[dayIndex];
+                      final sessionsForDay = state.schedule.sessions
+                          .where((s) => s.day == day)
+                          .toList();
+                      return TableRow(
+                        decoration: BoxDecoration(
+                        color: dayIndex.isEven
+                            ? Theme.of(context).colorScheme.surfaceContainerLowest
+                            : null,
+                        ),
+                        children: [
+                          _buildDayCell(day),
+                          ...List.generate(dailySessions, (sessionIdx) {
+                            final session = _findSession(
+                              sessionsForDay,
+                              sessionIdx + 1,
+                              selectedId,
+                              isClassroomView,
+                            );
+                            return _buildSessionCell(
+                              context,
+                              session,
+                              state,
+                              day,
+                              sessionIdx,
+                              selectedId,
+                              isClassroomView,
+                            );
+                          }),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -987,7 +1032,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Text(
-        day.name,
+        day.getLocalizedName(context),
         style: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 13,
@@ -1117,41 +1162,44 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
     Color borderColor;
     double borderWidth;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (isHovered) {
-      bgColor = Colors.blue.withOpacity(0.15);
-      borderColor = Colors.blue.shade400;
+      bgColor = Theme.of(context).colorScheme.primary.withOpacity(0.25);
+      borderColor = Theme.of(context).colorScheme.primary;
       borderWidth = 2.5;
     } else if (isEmpty) {
-      bgColor = Colors.transparent;
-      borderColor = Colors.grey.shade300;
-      borderWidth = 1;
+      bgColor = Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3);
+      borderColor = isDark ? Colors.white12 : Colors.grey.shade300;
+      borderWidth = 1.0;
     } else if (hasConflict) {
-      bgColor = Theme.of(context).colorScheme.error;
+      bgColor = Theme.of(context).colorScheme.errorContainer;
       borderColor = Theme.of(context).colorScheme.error;
-      borderWidth = 2;
+      borderWidth = 2.0;
     } else {
-      bgColor = Colors.blue.shade50.withOpacity(0.5);
-      borderColor = Colors.blue.shade200;
-      borderWidth = 1;
+      bgColor = isDark
+          ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+          : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.6);
+      borderColor = Theme.of(context).colorScheme.primary.withOpacity(0.4);
+      borderWidth = 1.0;
     }
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.fastOutSlowIn,
       width: _cellWidth,
       height: _cellHeight,
       margin: const EdgeInsets.all(AppSpacing.xs),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: !isEmpty && !isHovered
+        boxShadow: !isEmpty && !isHovered && !hasConflict
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: Theme.of(context).primaryColor.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ]
             : null,
@@ -1169,16 +1217,17 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
   }
 
   Widget _buildEmptyCellContent() {
+    final hintColor = Theme.of(context).hintColor.withOpacity(0.5);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.add_circle_outline,
-            size: 22, color: Colors.grey.shade400),
+        Icon(Icons.add_rounded, size: 24, color: hintColor),
         const SizedBox(height: 4),
         Text(
-          context.l10n.appName,
-          style: TextStyle(fontSize: 9, color: Colors.grey.shade400),
-        maxLines: 1, overflow: TextOverflow.ellipsis),
+          context.l10n.addSession,
+          style: TextStyle(fontSize: 10, color: hintColor, fontWeight: FontWeight.w500),
+          maxLines: 1, overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }
@@ -1190,10 +1239,13 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
     required bool isClassroomView,
     required bool hasConflict,
   }) {
-    final textColor =
-        hasConflict ? Theme.of(context).colorScheme.error : Colors.blue.shade800;
-    final subTextColor =
-        hasConflict ? Theme.of(context).colorScheme.error : Colors.grey.shade700;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = hasConflict
+        ? Theme.of(context).colorScheme.onErrorContainer
+        : Theme.of(context).colorScheme.onPrimaryContainer;
+    final subTextColor = hasConflict
+        ? Theme.of(context).colorScheme.onErrorContainer.withOpacity(0.8)
+        : Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1201,22 +1253,25 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
         // Conflict badge
         if (hasConflict)
           Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            margin: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.error,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.error.withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 2))],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.warning, size: 10, color: Theme.of(context).colorScheme.error),
-                const SizedBox(width: 3),
-                Text(context.l10n.appName,
+                Icon(Icons.warning_rounded, size: 12, color: Theme.of(context).colorScheme.onError),
+                const SizedBox(width: 4),
+                Text(context.l10n.conflict,
                     style: TextStyle(
-                        fontSize: 8,
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.error), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        letterSpacing: 0.5,
+                        color: Theme.of(context).colorScheme.onError),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -1226,8 +1281,8 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
             subjectName,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
               color: textColor,
               height: 1.2,
             ),
@@ -1235,30 +1290,37 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         // Teacher / Classroom
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isClassroomView ? Icons.person_outline : Icons.class_rounded,
-              size: 11,
-              color: subTextColor,
-            ),
-            const SizedBox(width: 3),
-            Flexible(
-              child: Text(
-                bottomLabel,
-                style: TextStyle(
-                  fontSize: 9.5,
-                  color: subTextColor,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: hasConflict ? Colors.white24 : Theme.of(context).colorScheme.surface.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isClassroomView ? Icons.person_rounded : Icons.class_rounded,
+                size: 10,
+                color: subTextColor,
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  bottomLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: subTextColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -1294,8 +1356,17 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
       context: context,
       barrierDismissible: !isGenerating,
       builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
+        return BlocListener<ScheduleBloc, ScheduleState>(
+          bloc: bloc,
+          listener: (ctx, state) {
+            if (isGenerating) {
+              if ((state is ScheduleLoaded && state.currentProgress == null) || state is ScheduleError) {
+                Navigator.pop(dialogContext);
+              }
+            }
+          },
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(_borderRadius)),
@@ -1311,7 +1382,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                         color: Theme.of(ctx).primaryColor, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text(context.l10n.appName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Expanded(child: Text(context.l10n.generateSchedule, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 ],
               ),
               content: SizedBox(
@@ -1322,11 +1393,11 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                   children: [
                     // --- Classroom Selection ---
                     _dialogSectionTitle(
-                        ctx, Icons.class_, context.l10n.appName),
+                        ctx, Icons.class_, context.l10n.classroomsLabel),
                     CheckboxListTile(
                       contentPadding: const EdgeInsetsDirectional.only(start: 8),
                       controlAffinity: ListTileControlAffinity.leading,
-                      title: Text(context.l10n.appName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      title: Text(context.l10n.selectAll, maxLines: 1, overflow: TextOverflow.ellipsis),
                       value: selectedClasses.length ==
                           allClassrooms.length,
                       onChanged: (val) {
@@ -1358,12 +1429,12 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                     const SizedBox(height: 20),
                     // --- Generation Mode ---
                     _dialogSectionTitle(
-                        ctx, Icons.tune, context.l10n.appName),
+                        ctx, Icons.tune, context.l10n.generationMode),
                     ...GenerationMode.values.map(
                       (mode) => RadioListTile<GenerationMode>(
                         contentPadding: const EdgeInsetsDirectional.only(start: 8),
-                        title: Text(mode.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        subtitle: Text(mode.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(_getModeName(context, mode), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text(_getModeDesc(context, mode), maxLines: 1, overflow: TextOverflow.ellipsis),
                         value: mode,
                         groupValue: selectedMode,
                         onChanged: (val) {
@@ -1374,7 +1445,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                     const SizedBox(height: 20),
                     // --- Advanced Settings ---
                     _dialogSectionTitle(
-                        ctx, Icons.settings_outlined, context.l10n.appName),
+                        ctx, Icons.settings_outlined, context.l10n.advancedSettings),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -1386,7 +1457,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                             decoration: InputDecoration(
-                              labelText: context.l10n.appName,
+                              labelText: context.l10n.maxRetries,
                               border: const OutlineInputBorder(),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 14),
@@ -1403,7 +1474,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                             decoration: InputDecoration(
-                              labelText: context.l10n.appName,
+                              labelText: context.l10n.maxDailyHours,
                               border: const OutlineInputBorder(),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 14),
@@ -1422,7 +1493,7 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                   onPressed: isGenerating
                       ? null
                       : () => Navigator.pop(dialogContext),
-                  child: Text(context.l10n.appName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  child: Text(context.l10n.cancel, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
                 FilledButton.icon(
                   icon: isGenerating
@@ -1435,16 +1506,18 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                           ),
                         )
                       : const Icon(Icons.auto_awesome, size: 20),
-                  label: Text(isGenerating
-                      ? context.l10n.appName
-                      : context.l10n.appName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  label: Text(
+                      isGenerating
+                          ? context.l10n.runningGenerationAlgorithm
+                          : context.l10n.generateSchedule,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 12),
                   ),
-                  onPressed: selectedClasses.isEmpty
+                  onPressed: selectedClasses.isEmpty || isGenerating
                       ? null
                       : () {
                           setDialogState(() => isGenerating = true);
@@ -1455,15 +1528,36 @@ class _ScheduleGridPageState extends State<ScheduleGridPage>
                             maxTeacherDailySessions:
                                 maxTeacherDailySessions,
                           ));
-                          Navigator.pop(dialogContext);
                         },
                 ),
               ],
             );
           },
-        );
-      },
-    );
+        ),
+      );
+    });
+  }
+
+  String _getModeName(BuildContext context, GenerationMode mode) {
+    switch (mode) {
+      case GenerationMode.balanced:
+        return context.l10n.balancedMode;
+      case GenerationMode.compact:
+        return context.l10n.compactMode;
+      case GenerationMode.priority:
+        return context.l10n.priority;
+    }
+  }
+
+  String _getModeDesc(BuildContext context, GenerationMode mode) {
+    switch (mode) {
+      case GenerationMode.balanced:
+        return context.l10n.balancedModeDesc;
+      case GenerationMode.compact:
+        return context.l10n.compactMode;
+      case GenerationMode.priority:
+        return context.l10n.priorityModeDesc;
+    }
   }
 
   Widget _dialogSectionTitle(
@@ -1609,12 +1703,12 @@ class _ShimmerEffectState extends State<ShimmerEffect>
                 widget.baseColor,
               ],
               stops: [
-                _animation.value - 0.3,
-                _animation.value,
-                _animation.value + 0.3,
+                (_animation.value - 0.3).clamp(0.0, 1.0),
+                _animation.value.clamp(0.0, 1.0),
+                (_animation.value + 0.3).clamp(0.0, 1.0),
               ],
-              begin: AlignmentDirectional.centerStart,
-              end: AlignmentDirectional.centerEnd,
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ).createShader(bounds);
           },
           child: child,

@@ -521,7 +521,7 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 100,
+      height: 115,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
@@ -536,34 +536,52 @@ class _StatsGrid extends StatelessWidget {
   }
 
   Widget _statChip(String label, String value, IconData icon, Color color) {
-    return Container(
-      width: 120,
-      margin: const EdgeInsetsDirectional.only(start: 12),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: color.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 4))],
-        border: Border.all(color: color.withOpacity(0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            width: 32, height: 32,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 18),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          width: 120,
+          margin: const EdgeInsetsDirectional.only(start: 12),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black26 : color.withOpacity(0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: color.withOpacity(isDark ? 0.3 : 0.15)),
           ),
-          Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'), maxLines: 1, overflow: TextOverflow.ellipsis),
-              Text(label, style: const TextStyle(fontSize: 11, fontFamily: 'Cairo'), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value,
+                      style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(label,
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'Cairo',
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

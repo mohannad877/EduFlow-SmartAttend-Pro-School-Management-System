@@ -128,10 +128,16 @@ class PdfExportService {
           title: school.name,
           subtitle: '${strings.classroomSubtitle}: $className',
           color: PdfColors.blue700,
+          arabicFont: arabicFont,
           arabicFontBold: arabicFontBold,
         ),
         pw.SizedBox(height: 10),
-        _buildMetaRow(strings: strings, dateStr: dateStr, schoolYear: school.academicYear),
+        _buildMetaRow(
+          strings: strings,
+          dateStr: dateStr,
+          schoolYear: school.academicYear,
+          arabicFont: arabicFont,
+        ),
         pw.SizedBox(height: 10),
         pw.Expanded(
           child: _buildScheduleTable(
@@ -151,7 +157,7 @@ class PdfExportService {
           ),
         ),
         pw.SizedBox(height: 8),
-        _buildFooter(strings: strings, dateStr: dateStr),
+        _buildFooter(strings: strings, dateStr: dateStr, arabicFont: arabicFont),
       ],
     );
   }
@@ -175,10 +181,16 @@ class PdfExportService {
           title: school.name,
           subtitle: '${strings.teacherSubtitle}: $teacherName',
           color: PdfColors.green700,
+          arabicFont: arabicFont,
           arabicFontBold: arabicFontBold,
         ),
         pw.SizedBox(height: 10),
-        _buildMetaRow(strings: strings, dateStr: dateStr, schoolYear: school.academicYear),
+        _buildMetaRow(
+          strings: strings,
+          dateStr: dateStr,
+          schoolYear: school.academicYear,
+          arabicFont: arabicFont,
+        ),
         pw.SizedBox(height: 10),
         pw.Expanded(
           child: _buildScheduleTable(
@@ -198,7 +210,7 @@ class PdfExportService {
           ),
         ),
         pw.SizedBox(height: 8),
-        _buildFooter(strings: strings, dateStr: dateStr),
+        _buildFooter(strings: strings, dateStr: dateStr, arabicFont: arabicFont),
       ],
     );
   }
@@ -209,6 +221,7 @@ class PdfExportService {
     required String title,
     required String subtitle,
     required PdfColor color,
+    required pw.Font arabicFont,
     required pw.Font arabicFontBold,
   }) {
     return pw.Container(
@@ -219,16 +232,17 @@ class PdfExportService {
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
           pw.Text(
             title,
-            style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.white, font: arabicFontBold),
+            style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.white, font: arabicFontBold),
             textDirection: pw.TextDirection.rtl,
           ),
-          pw.SizedBox(height: 8),
+          pw.SizedBox(height: 6),
           pw.Text(
             subtitle,
-            style: pw.TextStyle(fontSize: 16, color: PdfColors.white, font: arabicFontBold),
+            style: pw.TextStyle(fontSize: 14, color: PdfColors.white, font: arabicFont),
             textDirection: pw.TextDirection.rtl,
           ),
         ],
@@ -240,12 +254,21 @@ class PdfExportService {
     required SchedulePdfStrings strings,
     required String dateStr,
     required String schoolYear,
+    required pw.Font arabicFont,
   }) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text('${strings.generatedOnLabel}: $dateStr', style: const pw.TextStyle(fontSize: 11), textDirection: pw.TextDirection.rtl),
-        pw.Text('${strings.schoolYearLabel}: $schoolYear', style: const pw.TextStyle(fontSize: 11), textDirection: pw.TextDirection.rtl),
+        pw.Text(
+          '${strings.generatedOnLabel}: $dateStr',
+          style: pw.TextStyle(fontSize: 10, font: arabicFont),
+          textDirection: pw.TextDirection.rtl,
+        ),
+        pw.Text(
+          '${strings.schoolYearLabel}: $schoolYear',
+          style: pw.TextStyle(fontSize: 10, font: arabicFont),
+          textDirection: pw.TextDirection.rtl,
+        ),
       ],
     );
   }
@@ -299,6 +322,7 @@ class PdfExportService {
   pw.Widget _buildFooter({
     required SchedulePdfStrings strings,
     required String dateStr,
+    required pw.Font arabicFont,
   }) {
     return pw.Container(
       width: double.infinity,
@@ -311,8 +335,16 @@ class PdfExportService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(dateStr, style: const pw.TextStyle(fontSize: 9), textDirection: pw.TextDirection.rtl),
-          pw.Text(strings.generatedOnLabel, style: const pw.TextStyle(fontSize: 9), textDirection: pw.TextDirection.rtl),
+          pw.Text(
+            dateStr,
+            style: pw.TextStyle(fontSize: 9, font: arabicFont),
+            textDirection: pw.TextDirection.rtl,
+          ),
+          pw.Text(
+            strings.generatedOnLabel,
+            style: pw.TextStyle(fontSize: 9, font: arabicFont),
+            textDirection: pw.TextDirection.rtl,
+          ),
         ],
       ),
     );

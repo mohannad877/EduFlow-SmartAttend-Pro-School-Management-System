@@ -50,6 +50,7 @@ class ExcelExportService {
     );
     final dayStyle = CellStyle(
       backgroundColorHex: ExcelColor.fromHexString('#BBDEFB'),
+      fontColorHex: ExcelColor.fromHexString('#000000'),
       bold: true,
       fontSize: 11,
       horizontalAlign: HorizontalAlign.Center,
@@ -57,6 +58,7 @@ class ExcelExportService {
     );
     final sessionStyle = CellStyle(
       backgroundColorHex: ExcelColor.fromHexString('#E3F2FD'),
+      fontColorHex: ExcelColor.fromHexString('#000000'),
       fontSize: 10,
       horizontalAlign: HorizontalAlign.Center,
       verticalAlign: VerticalAlign.Center,

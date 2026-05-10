@@ -11,8 +11,28 @@ class SubjectRepositoryImpl implements ISubjectRepository {
   SubjectRepositoryImpl(this._db);
 
   @override
-  Future<void> deleteSubject(String id) {
-    return (_db.delete(_db.subjectsTable)..where((t) => t.id.equals(id))).go();
+  Future<void> deleteSubject(String id) async {
+    await _db.transaction(() async {
+      // Cascade: حذف الحصص المرتبطة بهذه المادة
+      await (_db.delete(_db.sessionsTable)
+            ..where((t) => t.subjectId.equals(id)))
+          .go();
+          
+      // Data Integrity: إزالة المادة من قوائم المعلمين
+      final teachers = await _db.select(_db.teachersTable).get();
+      for (final teacher in teachers) {
+        if (teacher.subjectIds.contains(id)) {
+          final updatedSubjectIds = List<String>.from(teacher.subjectIds)..remove(id);
+          await _db.update(_db.teachersTable).replace(
+            teacher.copyWith(subjectIds: updatedSubjectIds)
+          );
+        }
+      }
+      
+      // ثم حذف المادة
+      await (_db.delete(_db.subjectsTable)..where((t) => t.id.equals(id)))
+          .go();
+    });
   }
 
   @override

@@ -2,8 +2,10 @@
 // Simple event bus for decoupled domain event publishing
 
 import 'dart:async';
+import 'package:injectable/injectable.dart';
 import 'package:school_schedule_app/domain/events/schedule_events.dart';
 
+@lazySingleton
 class EventBusService {
   final _controller = StreamController<DomainEvent>.broadcast();
 

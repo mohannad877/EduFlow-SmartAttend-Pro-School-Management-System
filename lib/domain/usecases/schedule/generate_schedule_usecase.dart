@@ -8,6 +8,7 @@ import 'package:school_schedule_app/core/utils/l10n_extension.dart';
 // ============================================================================
 
 import 'dart:async';
+import 'dart:isolate';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
@@ -947,6 +948,37 @@ class GenerateScheduleUseCase {
       ));
     }
     
+    // 🧮 التحقق الاستباقي (Sanity Check) — تحذيرات فقط، لا نوقف التوليد
+    int totalRequiredSessions = 0;
+    for (var subject in subjects) {
+      for (var classroom in classrooms) {
+        if (subject.classPeriods.containsKey(classroom.id)) {
+          totalRequiredSessions += subject.classPeriods[classroom.id]!;
+        }
+      }
+    }
+
+    final int totalAvailableSessions = teachers.fold(0, (sum, t) => sum + t.maxWeeklyHours);
+    final int totalScheduleSlots = classrooms.length * request.dailySessions * request.workDays.length;
+
+    if (totalRequiredSessions > totalAvailableSessions && totalAvailableSessions > 0) {
+      warnings.add(GenerationWarning(
+        type: WarningType.lowTeacherAvailability,
+        message: 'تحذير: الحصص المطلوبة ($totalRequiredSessions) قد تتجاوز الطاقة القصوى للمعلمين ($totalAvailableSessions). سيتم التوليد مع أفضل توزيع ممكن.',
+        severity: Severity.high,
+        suggestion: 'أضف معلمين إضافيين أو قلل الحصص الأسبوعية للمواد.',
+      ));
+    }
+
+    if (totalRequiredSessions > 0 && totalRequiredSessions > totalScheduleSlots) {
+      warnings.add(GenerationWarning(
+        type: WarningType.constraintRelaxed,
+        message: 'تحذير: الحصص المطلوبة ($totalRequiredSessions) تتجاوز خانات الجدول المتاحة ($totalScheduleSlots). سيتم التوليد بأكبر عدد ممكن من الحصص.',
+        severity: Severity.medium,
+        suggestion: 'زد عدد الحصص اليومية أو أيام العمل في إعدادات المدرسة.',
+      ));
+    }
+    
     // 🗂️ بناء خرائط البحث السريع (O(1) Lookup)
     final genContext = _GenerationContext(
       teachers: teachers,
@@ -994,19 +1026,38 @@ class GenerateScheduleUseCase {
       );
       
       // 2. إطلاق Isolate للتوليد
+      final receivePort = ReceivePort();
+      if (request.onProgress != null) {
+        receivePort.listen((message) {
+          if (message is (int, double, String)) {
+            request.onProgress!(GenerationProgress(
+              phase: algo.GenerationPhase.values[message.$1],
+              progress: message.$2, 
+              message: message.$3
+            ));
+          }
+        });
+      }
+
       final isolateRequest = IsolateGenerationRequest(
         dailySessions: request.dailySessions,
         workDays: request.workDays,
         targetClassroomIds: request.targetClassroomIds,
         mode: request.mode,
+        // ملاحظة: generation_isolate.dart يستدعي toIsolateSafe() تلقائياً
+        // لإزالة metricsCollector و cancellationToken و onProgress قبل الإرسال عبر Isolate
         config: algoConfig.copyWith(
           randomSeed: request.randomSeed,
-          cancellationToken: request.cancellationToken,
-        ),
+        ).toIsolateSafe(),
         data: generationData,
+        progressPort: request.onProgress != null ? receivePort.sendPort : null,
       );
       
-      return await runGenerationOptimizationInIsolate(isolateRequest);
+      try {
+        return await runGenerationOptimizationInIsolate(isolateRequest);
+      } finally {
+        receivePort.close();
+      }
     }
     
     final l10n = AppNavigator.currentContext!.l10n;

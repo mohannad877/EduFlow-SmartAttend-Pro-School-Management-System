@@ -67,12 +67,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i510.BlocConfig>(() => coreModule.blocConfig);
     gh.lazySingleton<_i810.UndoStack<_i259.ScheduleEvent>>(
         () => coreModule.undoStack);
+    gh.lazySingleton<_i407.Random>(() => coreModule.random);
+    gh.lazySingleton<_i708.ValidationConfig>(() => coreModule.validationConfig);
+    gh.lazySingleton<_i230.UseCaseConfig>(() => coreModule.useCaseConfig);
     gh.lazySingleton<_i483.AppDatabase>(() => registerModule.appDatabase);
     gh.lazySingleton<_i365.ExcelExportService>(
         () => _i365.ExcelExportService());
     gh.lazySingleton<_i988.PdfExportService>(() => _i988.PdfExportService());
     gh.lazySingleton<_i221.Logger>(() => _i221.Logger());
     gh.lazySingleton<_i717.MetricsCollector>(() => _i717.MetricsCollector());
+    gh.lazySingleton<_i261.EventBusService>(() => _i261.EventBusService());
     gh.lazySingleton<_i98.ISchoolRepository>(
         () => _i642.SchoolRepositoryImpl(gh<_i483.AppDatabase>()));
     gh.lazySingleton<_i853.ISubjectRepository>(
@@ -87,13 +91,13 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i1052.ScheduleRepositoryImpl(gh<_i483.AppDatabase>()));
     gh.factory<_i674.ClassroomBloc>(
         () => _i674.ClassroomBloc(gh<_i198.IClassroomRepository>()));
-    gh.factory<_i121.SubjectBloc>(
-        () => _i121.SubjectBloc(gh<_i853.ISubjectRepository>()));
     gh.lazySingleton<_i708.ScheduleValidator>(() => _i708.ScheduleValidator(
           defaultConfig: gh<_i708.ValidationConfig>(),
-          logger: gh<_i708.Logger>(),
+          logger: gh<_i221.Logger>(),
           metricsCollector: gh<_i717.MetricsCollector>(),
         ));
+    gh.factory<_i121.SubjectBloc>(
+        () => _i121.SubjectBloc(gh<_i853.ISubjectRepository>()));
     gh.factory<_i1001.TeacherBloc>(
         () => _i1001.TeacherBloc(gh<_i796.ITeacherRepository>()));
     gh.factory<_i360.DashboardBloc>(() => _i360.DashboardBloc(
@@ -125,7 +129,7 @@ extension GetItInjectableX on _i174.GetIt {
               metricsCollector: gh<_i717.MetricsCollector>(),
               config: gh<_i230.UseCaseConfig>(),
             ));
-    gh.lazySingleton<_i510.ScheduleBloc>(() => _i510.ScheduleBloc(
+    gh.factory<_i510.ScheduleBloc>(() => _i510.ScheduleBloc(
           gh<_i671.IScheduleRepository>(),
           gh<_i796.ITeacherRepository>(),
           gh<_i853.ISubjectRepository>(),

@@ -98,6 +98,12 @@ class SessionsTable extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {scheduleId, teacherId, day, sessionNumber},
+        {scheduleId, classId, day, sessionNumber},
+      ];
 }
 
 @DataClassName("ScheduleDto")

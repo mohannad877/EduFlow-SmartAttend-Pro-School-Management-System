@@ -11,8 +11,28 @@ class TeacherRepositoryImpl implements ITeacherRepository {
   TeacherRepositoryImpl(this._db);
 
   @override
-  Future<void> deleteTeacher(String id) {
-    return (_db.delete(_db.teachersTable)..where((t) => t.id.equals(id))).go();
+  Future<void> deleteTeacher(String id) async {
+    await _db.transaction(() async {
+      // Cascade: حذف جميع الحصص المرتبطة بهذا المعلم
+      await (_db.delete(_db.sessionsTable)
+            ..where((t) => t.teacherId.equals(id)))
+          .go();
+          
+      // Data Integrity: إزالة المعلم من قائمة المعلمين المؤهلين للمادة
+      final subjects = await _db.select(_db.subjectsTable).get();
+      for (final subject in subjects) {
+        if (subject.qualifiedTeacherIds.contains(id)) {
+          final updatedIds = List<String>.from(subject.qualifiedTeacherIds)..remove(id);
+          await _db.update(_db.subjectsTable).replace(
+            subject.copyWith(qualifiedTeacherIds: updatedIds)
+          );
+        }
+      }
+      
+      // ثم حذف المعلم نفسه
+      await (_db.delete(_db.teachersTable)..where((t) => t.id.equals(id)))
+          .go();
+    });
   }
 
   @override

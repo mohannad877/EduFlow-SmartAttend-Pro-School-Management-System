@@ -223,6 +223,42 @@ class ScheduleLoaded extends ScheduleState {
       ];
 }
 
+/// ⚠️ حالة تمثل جدول تم توليده بنجاح جزئي (يحتوي على فجوات)
+@immutable
+class ScheduleGenerationPartialSuccess extends ScheduleLoaded {
+  final List<dynamic> unassignedSlots;
+
+  ScheduleGenerationPartialSuccess({
+    required super.schedule,
+    required super.teacherNames,
+    required super.subjectNames,
+    required super.classroomNames,
+    required this.unassignedSlots,
+    super.selectedClassroomId,
+    super.selectedTeacherId,
+    super.viewMode,
+    super.dailySessions,
+    super.workDays,
+    super.showConflicts,
+    super.showWarnings,
+    super.highlightUnassigned,
+    super.validationResult,
+    super.generationMetadata,
+    super.analytics,
+    super.canUndo,
+    super.canRedo,
+    super.actionSuccess,
+    super.actionError,
+    super.actionErrorDetails,
+    super.currentProgress,
+    super.stateId,
+    super.loadedAt,
+  });
+
+  @override
+  List<Object?> get props => [...super.props, unassignedSlots.length];
+}
+
 /// 🔄 تتبع تقدم عملية طويلة
 @immutable
 class OperationProgress {

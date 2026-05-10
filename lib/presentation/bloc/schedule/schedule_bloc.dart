@@ -8,6 +8,7 @@ import 'package:school_schedule_app/core/navigation/app_router.dart';
 // ============================================================================
 
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:meta/meta.dart';
@@ -54,7 +55,7 @@ import 'schedule_state.dart';
 // 🧠 2. الـ BLoC الرئيسي (Professional Implementation)
 // ============================================================================
 
-@lazySingleton
+@injectable
 class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   // 📦 المخازن (Repositories)
   final IScheduleRepository _scheduleRepo;
@@ -203,7 +204,11 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
       // 🗺️ بناء خرائط الأسماء للعرض
       final teacherMap = {for (var t in teachers) t.id: t.fullName};
       final subjectMap = {for (var s in subjects) s.id: s.name};
-      final classroomMap = {for (var c in classrooms) c.id: c.name};
+      // نعرض اسم الفصل + الشعبة معاً لتمييز الشعب المتعددة للصف الواحد
+      final classroomMap = {
+        for (var c in classrooms)
+          c.id: c.section.isNotEmpty ? '${c.name} - ${c.section}' : c.name,
+      };
 
       // 🎯 تحديد العنصر الافتراضي
       final defaultClassroom = selectedClassroom ??
@@ -269,13 +274,63 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   /// 🤖 2. توليد الجدول باستخدام المحرك الذكي
   Future<void> _onGenerateSchedule(
       GenerateSchedule event, Emitter<ScheduleState> emit) async {
-    if (state is! ScheduleLoaded) {
-      emit(const ScheduleError('invalid_state_for_generation'));
-      return;
+
+    // ── إذا لم يكن هناك جدول محمّل، نقوم بتحميل بيانات الأساس أولاً ──
+    ScheduleLoaded currentState;
+    if (state is ScheduleLoaded) {
+      currentState = state as ScheduleLoaded;
+    } else {
+      // لا يوجد جدول نشط — نحمّل بيانات المرجع ونبني حالة مؤقتة فارغة
+      emit(const ScheduleLoading(progress: 0.05, message: ''));
+      try {
+        final results = await Future.wait([
+          _teacherRepo.getTeachers(),
+          _classroomRepo.getClassrooms(),
+          _subjectRepo.getSubjects(),
+          _schoolRepo.getSchool(),
+        ]);
+        final teachers  = results[0] as List<dynamic>;
+        final classrooms = results[1] as List<dynamic>;
+        final subjects  = results[2] as List<dynamic>;
+        final school    = results[3];
+
+        final teacherMap   = {for (var t in teachers)   t.id as String: (t.fullName ?? '') as String};
+        final classroomMap = {
+          for (var c in classrooms)
+            c.id as String: ((c.section?.isNotEmpty ?? false) ? '${c.name} - ${c.section}' : (c.name ?? '')) as String,
+        };
+        final subjectMap   = {for (var s in subjects)   s.id as String: (s.name ?? '') as String};
+
+        final now = DateTime.now();
+        final emptySchedule = Schedule(
+          id: 'empty',
+          name: 'new',
+          creationDate: now,
+          startDate: now,
+          endDate: now.add(const Duration(days: 90)),
+          schoolId: (school as dynamic)?.id ?? 'default',
+          creatorId: 'system',
+          status: ScheduleStatus.draft,
+          sessions: const [],
+          metadata: const {},
+        );
+
+        currentState = ScheduleLoaded(
+          schedule: emptySchedule,
+          teacherNames: teacherMap,
+          subjectNames: subjectMap,
+          classroomNames: classroomMap,
+          dailySessions: (school as dynamic)?.dailySessions ?? 6,
+          workDays: (school as dynamic)?.workDays?.length ?? 5,
+        );
+        emit(currentState);
+      } catch (e) {
+        emit(ScheduleError('bootstrap_failed: $e'));
+        return;
+      }
     }
 
     final operationId = 'generate_${const Uuid().v4()}';
-    final currentState = state as ScheduleLoaded;
     final cancelToken = CancellationToken();
     _activeOperations[operationId] = cancelToken;
 
@@ -309,12 +364,20 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
         ),
       ));
 
-      final school = await _schoolRepo.getSchool();
-      if (school == null) {
-        throw AppException('missing_school_settings',
-            message: AppNavigator
-                .navigatorKey.currentContext!.l10n.missingSchoolSettingsError);
-      }
+      final rawSchool = await _schoolRepo.getSchool();
+      // إذا لم تُعبأ إعدادات المدرسة، نستخدم قيماً افتراضية معقولة
+      final school = rawSchool ?? School(
+        id: 'default_school',
+        name: 'المدرسة الافتراضية',
+        address: '',
+        phone: '',
+        email: '',
+        dailySessions: 6,
+        workDays: [WorkDay.sunday, WorkDay.monday, WorkDay.tuesday, WorkDay.wednesday, WorkDay.thursday],
+        firstSessionTime: const TimeOfDay(hour: 8, minute: 0),
+        sessionDuration: 45,
+        academicYear: '2025-2026',
+      );
 
       // 🎛️ بناء إعدادات التوليد
       final request = GenerateScheduleRequest(
@@ -375,15 +438,121 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
 
       stopwatch.stop();
 
-      // 🔄 إعادة تحميل الجدول المحدث
+      // إخفاء التحميل وإظهار الرسالة
       emit(currentState.copyWith(
         actionSuccess: successMessage,
         currentProgress: null,
       ));
 
-      // تأخير بسيط لعرض الرسالة ثم إعادة التحميل
+      // تأخير بسيط لعرض الرسالة
       await Future.delayed(const Duration(milliseconds: 500));
-      add(LoadSchedule(classroomId: currentState.selectedClassroomId));
+
+      // 🔄 تحميل الجدول مباشرةً من قاعدة البيانات لضمان تحديث الواجهة
+      // (نتجنب استخدام add(LoadSchedule) لأنه يمر عبر debounce/switchMap)
+      try {
+        final savedSchedule = await _scheduleRepo.getActiveSchedule();
+        if (savedSchedule != null) {
+          // تحديث الـ cache
+          _refCache.invalidate('teachers');
+          _refCache.invalidate('classrooms');
+          _refCache.invalidate('subjects');
+
+          final freshResults = await Future.wait([
+            _refCache.getOrFetch('teachers', () => _teacherRepo.getTeachers()),
+            _refCache.getOrFetch('classrooms', () => _classroomRepo.getClassrooms()),
+            _refCache.getOrFetch('subjects', () => _subjectRepo.getSubjects()),
+            _schoolRepo.getSchool(),
+          ]);
+          final freshTeachers   = freshResults[0] as List<Teacher>;
+          final freshClassrooms = freshResults[1] as List<Classroom>;
+          final freshSubjects   = freshResults[2] as List<Subject>;
+          final freshSchool     = freshResults[3] as School?;
+
+          final teacherMap   = {for (var t in freshTeachers)   t.id: t.fullName};
+          final subjectMap   = {for (var s in freshSubjects)   s.id: s.name};
+          final classroomMap = {
+            for (var c in freshClassrooms)
+              c.id: c.section.isNotEmpty ? '${c.name} - ${c.section}' : c.name,
+          };
+
+          final defaultClassroom = currentState.selectedClassroomId ??
+              (freshClassrooms.isNotEmpty ? freshClassrooms.first.id : null);
+
+          final analytics = _calculateAnalytics(savedSchedule, freshTeachers, freshClassrooms);
+
+          if (!isComplete) {
+            emit(ScheduleGenerationPartialSuccess(
+              schedule: savedSchedule,
+              teacherNames: teacherMap,
+              subjectNames: subjectMap,
+              classroomNames: classroomMap,
+              unassignedSlots: result.algorithmResult.unassignedSlots,
+              selectedClassroomId: defaultClassroom,
+              selectedTeacherId: currentState.selectedTeacherId,
+              viewMode: currentState.viewMode,
+              dailySessions: freshSchool?.dailySessions ?? currentState.dailySessions,
+              workDays: freshSchool?.workDays.length ?? currentState.workDays,
+              showConflicts: currentState.showConflicts,
+              showWarnings: currentState.showWarnings,
+              highlightUnassigned: currentState.highlightUnassigned,
+              validationResult: null,
+              generationMetadata: savedSchedule.metadata,
+              analytics: analytics,
+              canUndo: _undoStack.canUndo,
+              canRedo: _undoStack.canRedo,
+              actionSuccess: successMessage,
+            ));
+          } else {
+            emit(ScheduleLoaded(
+              schedule: savedSchedule,
+              teacherNames: teacherMap,
+              subjectNames: subjectMap,
+              classroomNames: classroomMap,
+              selectedClassroomId: defaultClassroom,
+              selectedTeacherId: currentState.selectedTeacherId,
+              viewMode: currentState.viewMode,
+              dailySessions: freshSchool?.dailySessions ?? currentState.dailySessions,
+              workDays: freshSchool?.workDays.length ?? currentState.workDays,
+              validationResult: null,
+              generationMetadata: savedSchedule.metadata,
+              analytics: analytics,
+              canUndo: _undoStack.canUndo,
+              canRedo: _undoStack.canRedo,
+              actionSuccess: successMessage,
+            ));
+          }
+        } else {
+          // fallback: show what was generated in memory (not saved)
+          if (!isComplete) {
+            emit(ScheduleGenerationPartialSuccess(
+              schedule: result.schedule,
+              teacherNames: currentState.teacherNames,
+              subjectNames: currentState.subjectNames,
+              classroomNames: currentState.classroomNames,
+              unassignedSlots: result.algorithmResult.unassignedSlots,
+              selectedClassroomId: currentState.selectedClassroomId,
+              selectedTeacherId: currentState.selectedTeacherId,
+              viewMode: currentState.viewMode,
+              dailySessions: currentState.dailySessions,
+              workDays: currentState.workDays,
+              actionSuccess: successMessage,
+            ));
+          } else {
+            emit(currentState.copyWith(
+              schedule: result.schedule,
+              actionSuccess: successMessage,
+              currentProgress: null,
+            ));
+          }
+        }
+      } catch (_) {
+        // إذا فشل إعادة التحميل، على الأقل نُظهر الجدول المولد في الذاكرة
+        emit(currentState.copyWith(
+          schedule: result.schedule,
+          actionSuccess: successMessage,
+          currentProgress: null,
+        ));
+      }
 
       _logger.info(
           AppNavigator.navigatorKey.currentContext!.l10n.generationCompleted, {

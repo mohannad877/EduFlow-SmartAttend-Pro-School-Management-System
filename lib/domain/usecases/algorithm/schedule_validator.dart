@@ -22,6 +22,7 @@ import 'package:school_schedule_app/domain/entities/validation_result.dart';
 
 // 📡 الاستيراد من طبقة الاستثناءات والخدمات
 import 'package:school_schedule_app/core/utils/metrics_collector.dart';
+import 'package:school_schedule_app/core/utils/logger.dart';
 
 // ============================================================================
 // 🏗️ 1. نماذج التحقق المتقدمة (Advanced Validation Models)
@@ -631,7 +632,7 @@ class ScheduleValidator {
         ));
             } catch (e, stack) {
         ruleStopwatch.stop();
-        _logger.error(DomainStrings.validation.morning, e, stack);
+        _logger.error(DomainStrings.validation.morning, {'error': e, 'stack': stack});
         
         messages.add(ValidationMessage.error(
           code: 'RULE_EXECUTION_ERROR',
@@ -1303,39 +1304,6 @@ extension ValidationHelpers on ScheduleValidator {
   }
 }
 
-/// 🪵 واجهة التسجيل الموحدة
-abstract class Logger {
-  void debug(String message, [Map<String, dynamic>? context]);
-  void info(String message, [Map<String, dynamic>? context]);
-  void warning(String message, [Map<String, dynamic>? context]);
-  void error(String message, [Object? error, StackTrace? stackTrace]);
-  
-  static final defaultLogger = _ConsoleLogger();
-}
-
-class _ConsoleLogger implements Logger {
-  @override
-  void debug(String message, [Map<String, dynamic>? context]) => 
-      _log('DEBUG', message, context);
-  @override
-  void info(String message, [Map<String, dynamic>? context]) => 
-      _log('INFO', message, context);
-  @override
-  void warning(String message, [Map<String, dynamic>? context]) => 
-      _log('WARN', message, context);
-  @override
-  void error(String message, [Object? error, StackTrace? stackTrace]) {
-    _log('ERROR', message, {'error': error?.toString()});
-    if (stackTrace != null) {
-      // ignore
-    }
-  }
-  
-  void _log(String level, String message, [Map<String, dynamic>? context]) {
-    // final ctx = context != null ? ' | $context' : '';
-    // ignore
-  }
-}
 
 // ============================================================================
 // 🎉 ملاحظات الاستخدام والتحسين

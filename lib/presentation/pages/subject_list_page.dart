@@ -27,16 +27,14 @@ class SubjectListPage extends StatelessWidget {
               title: Text(context.l10n.subjects, maxLines: 1, overflow: TextOverflow.ellipsis),
               centerTitle: true,
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+            floatingActionButton: FloatingActionButton(
               onPressed: () {
                 final bloc = context.read<SubjectBloc>();
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SubjectFormPage())).then((_) {
                   if (context.mounted) bloc.add(LoadSubjects());
                 });
               },
-              icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
-              label: Text(context.l10n.addSubject, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: const Icon(Icons.add),
             ).animate().scale(),
             body: BlocConsumer<SubjectBloc, SubjectState>(
               listener: (context, state) {

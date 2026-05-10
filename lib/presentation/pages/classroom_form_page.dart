@@ -205,21 +205,18 @@ class _ClassroomFormPageState extends State<ClassroomFormPage> {
                                     .any((s) => s.id == subject.id);
                                 return FilterChip(
                                   label: Text(subject.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedSubjects.add(subject);
-                                      } else {
-                                        _selectedSubjects.removeWhere(
-                                            (s) => s.id == subject.id);
-                                      }
-                                    });
-                                  },
-                                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  checkmarkColor: Theme.of(context).colorScheme.primary,
-                                );
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _selectedSubjects.add(subject);
+                                        } else {
+                                          _selectedSubjects.removeWhere(
+                                              (s) => s.id == subject.id);
+                                        }
+                                      });
+                                    },
+                                  );
                               }).toList(),
                             ),
                           ],

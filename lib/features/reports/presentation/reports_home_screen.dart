@@ -72,7 +72,19 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       child: Scaffold(
         key: _scaffoldKey,
         appBar: _buildAppBar(),
-        body: _buildBody(),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).scaffoldBackgroundColor,
+                Theme.of(context).scaffoldBackgroundColor.withOpacity(0.97),
+              ],
+            ),
+          ),
+          child: _buildBody(),
+        ),
         floatingActionButton: _buildFloatingActionButton(),
       ),
     );
@@ -80,28 +92,28 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return PremiumAppBar(
-      title: Text(context.l10n.scheduleGenerationFailed, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(context.l10n.reportsSection, maxLines: 1, overflow: TextOverflow.ellipsis),
       elevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.filter_alt_outlined),
-          tooltip: context.l10n.missingSchoolSettings,
+          tooltip: context.l10n.advancedFilter,
           onPressed: () => _showAdvancedFilterDialog(),
         ),
         IconButton(
           icon: const Icon(Icons.print),
-          tooltip: context.l10n.reportBug,
+          tooltip: context.l10n.print,
           onPressed: () => _printCurrentReport(),
         ),
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
           onSelected: (value) => _handleMenuAction(value),
           itemBuilder: (context) => [
-            PopupMenuItem(value: 'export_pdf', child: Text(context.l10n.missingGenerationData, maxLines: 1, overflow: TextOverflow.ellipsis)),
-            PopupMenuItem(value: 'export_excel', child: Text(context.l10n.teachersView, maxLines: 1, overflow: TextOverflow.ellipsis)),
-            PopupMenuItem(value: 'export_csv', child: Text(context.l10n.schoolInfo, maxLines: 1, overflow: TextOverflow.ellipsis)),
-            PopupMenuItem(value: 'export_html', child: Text(context.l10n.schoolName, maxLines: 1, overflow: TextOverflow.ellipsis)),
-            PopupMenuItem(value: 'share', child: Text(context.l10n.dailySessions, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            PopupMenuItem(value: 'export_pdf', child: Text(context.l10n.exportPdf, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            PopupMenuItem(value: 'export_excel', child: Text(context.l10n.exportExcel, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            PopupMenuItem(value: 'export_csv', child: Text(context.l10n.exportCsv, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            PopupMenuItem(value: 'export_html', child: Text(context.l10n.exportHtml, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            PopupMenuItem(value: 'share', child: Text(context.l10n.share, maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
         ),
       ],
@@ -113,31 +125,67 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       onRefresh: () async => setState(() {}),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // بطاقة الإحصائيات السريعة (مطورة)
             _buildAdvancedStatsCard(),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
+
+            // قسم إجراءات التصدير السريعة (توليد التقارير)
+            _buildQuickGenerationActions(),
+
+            const SizedBox(height: 28),
 
             // أنواع التقارير (مع أيقونات وألوان)
-            SectionHeader(title: context.l10n.sessionDurationMinutes),
-            const SizedBox(height: 12),
+            SectionHeader(title: context.l10n.availableReportTypes),
+            const SizedBox(height: 16),
             _buildReportTypesGrid(),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // آخر التقارير المولدة (سجل سريع)
-            SectionHeader(title: context.l10n.workDays, actionLabel: context.l10n.noActiveSchedule),
-            const SizedBox(height: 12),
+            SectionHeader(title: context.l10n.lastGeneratedReports, actionLabel: context.l10n.viewAll),
+            const SizedBox(height: 16),
             _buildRecentReportsList(),
 
             const SizedBox(height: 80),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildQuickGenerationActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: context.l10n.quickActions),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionBtn(
+                label: context.l10n.exportPdf,
+                icon: Icons.picture_as_pdf_rounded,
+                color: Theme.of(context).colorScheme.error,
+                onTap: () => _handleMenuAction('export_pdf'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _QuickActionBtn(
+                label: context.l10n.exportExcel,
+                icon: Icons.table_chart_rounded,
+                color: Colors.green.shade600,
+                onTap: () => _handleMenuAction('export_excel'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -149,42 +197,89 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         final stats = snapshot.data!;
-        return Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              gradient: AppColors.premiumGradient,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.insights, color: Colors.white, size: 28),
-                    const SizedBox(width: 12),
-                    Text(context.l10n.selectAtLeastOneDay, style: AppTextStyles.titleMedium.copyWith(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.spaceAround,
-                  children: [
-                    _StatItem(label: context.l10n.savedSuccessfully, value: '${stats['totalStudents']}', icon: Icons.people, color: Colors.white),
-                    _StatItem(label: context.l10n.presentToday, value: '${stats['presentToday']}', icon: Icons.check_circle, color: Colors.white),
-                    _StatItem(label: context.l10n.absentToday, value: '${stats['absentToday']}', icon: Icons.cancel, color: Colors.white),
-                    _StatItem(label: context.l10n.attendanceRate, value: '${stats['attendanceRate']}%', icon: Icons.trending_up, color: Colors.white),
-                    _StatItem(label: context.l10n.absenceRate, value: '${stats['absenceRate']}%', icon: Icons.trending_down, color: Colors.white),
-                    _StatItem(label: context.l10n.bestMonth, value: stats['bestMonth'] ?? '—', icon: Icons.calendar_month, color: Colors.white),
-                  ],
+                SectionHeader(title: context.l10n.statistics),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(context.l10n.todayAttendance, style: AppTextStyles.caption.copyWith(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+            
+            // Main Overview Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(color: Theme.of(context).primaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8)),
+                ],
+                gradient: LinearGradient(
+                  colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(context.l10n.attendanceRate, style: AppTextStyles.subtitle2.copyWith(color: Colors.white70)),
+                        const SizedBox(height: 4),
+                        Text("${stats['attendanceRate']}%", style: AppTextStyles.headline1.copyWith(color: Colors.white, fontSize: 42)),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                          child: Text("${context.l10n.presentToday}: ${stats['presentToday']}", style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 90, height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.15),
+                    ),
+                    child: const Icon(Icons.insert_chart_outlined_rounded, size: 48, color: Colors.white),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
+            
+            const SizedBox(height: 16),
+            
+            // Secondary Stats Grid
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              children: [
+                _MiniStatCard(title: context.l10n.totalStudents, value: '${stats['totalStudents']}', icon: Icons.group_rounded, color: Colors.blue),
+                _MiniStatCard(title: context.l10n.absentToday, value: '${stats['absentToday']}', icon: Icons.person_off_rounded, color: Theme.of(context).colorScheme.error),
+                _MiniStatCard(title: context.l10n.absenceRate, value: '${stats['absenceRate']}%', icon: Icons.trending_down_rounded, color: Colors.orange.shade600),
+                _MiniStatCard(title: context.l10n.bestAttendanceMonth, value: stats['bestMonth'] ?? '—', icon: Icons.calendar_month_rounded, color: Colors.deepPurple.shade400),
+              ],
+            ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0),
+          ],
         );
       },
     );
@@ -231,12 +326,12 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
 
   Widget _buildReportTypesGrid() {
     final reports = [
-      (context.l10n.daily, context.l10n.dailyAttendanceReport, Icons.today, AppColors.primary),
-      (context.l10n.monthly, context.l10n.monthlyStats, Icons.calendar_month, AppColors.secondary),
-      (context.l10n.yearly, context.l10n.invalidNumber, Icons.calendar_today, Theme.of(context).colorScheme.secondary),
-      (context.l10n.periodLabel, context.l10n.emptySlot, Icons.person_search, AppColors.info),
-      (context.l10n.conflict, context.l10n.resetZoom, Icons.compare_arrows, const Color(0xFF7B1FA2)),
-      (context.l10n.selectClassesSections, context.l10n.selectAll, Icons.class_, AppColors.secondary),
+      (context.l10n.daily, context.l10n.dailyReportDesc, Icons.today_rounded, Theme.of(context).primaryColor),
+      (context.l10n.monthly, context.l10n.monthlyReportDesc, Icons.calendar_month_rounded, Theme.of(context).colorScheme.secondary),
+      (context.l10n.yearly, context.l10n.yearlyReportLabel, Icons.calendar_today_rounded, Colors.orange.shade600),
+      (context.l10n.period, context.l10n.studentReportDesc, Icons.person_search_rounded, Colors.blue.shade600),
+      (context.l10n.comparisonResults, context.l10n.compareSections, Icons.compare_arrows_rounded, Colors.deepPurple.shade500),
+      (context.l10n.detailedSectionReport, context.l10n.detailedSectionReportDesc, Icons.class_rounded, Colors.teal.shade600),
     ];
 
     return GridView.builder(
@@ -244,20 +339,20 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 1.4,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        childAspectRatio: 1.15,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
       itemCount: reports.length,
       itemBuilder: (context, index) {
         final item = reports[index];
         return ReportTypeCard(
           icon: item.$3,
-          title: context.l10n.generationMode,
+          title: item.$1,
           description: item.$2,
           color: item.$4,
-          onTap: () => _navigateToReport(item.$1 as String),
-        ).animate().fadeIn(duration: 300.ms, delay: (index * 100).ms).slideX(begin: 0.1, end: 0);
+          onTap: () => _navigateToReport(item.$1),
+        ).animate().fadeIn(duration: 400.ms, delay: (index * 80).ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1));
       },
     );
   }
@@ -269,11 +364,11 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       AppNavigator.push(AppRoutes.monthlyReport);
     } else if (type == context.l10n.yearly) {
       AppNavigator.push(AppRoutes.yearlyReport);
-    } else if (type == context.l10n.periodLabel) {
+    } else if (type == context.l10n.period) {
       _showStudentSelectionDialog();
-    } else if (type == context.l10n.conflict) {
+    } else if (type == context.l10n.comparisonResults) {
       _showComparativeReportDialog();
-    } else if (type == context.l10n.selectClassesSections) {
+    } else if (type == context.l10n.detailedSectionReport) {
       _showClassDetailedReport();
     }
   }
@@ -306,32 +401,97 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
 
   Widget _buildRecentReportsList() {
     if (_recentReports.isEmpty) {
-      return Center(child: Text(context.l10n.noReports, maxLines: 1, overflow: TextOverflow.ellipsis));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).hintColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.history_rounded, size: 48, color: Theme.of(context).hintColor.withOpacity(0.7)),
+              ),
+              const SizedBox(height: 16),
+              Text(context.l10n.noReports, style: AppTextStyles.body2.copyWith(color: Theme.of(context).hintColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      );
     }
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _recentReports.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final file = _recentReports[index];
         final fileName = p.basename(file.path);
         final isPdf = fileName.endsWith('.pdf');
         
         return Card(
-          child: ListTile(
-            leading: Icon(
-              isPdf ? Icons.picture_as_pdf : Icons.table_chart,
-              color: isPdf ? Theme.of(context).colorScheme.error : AppColors.success,
-            ),
-            title: Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () => Share.shareXFiles([XFile(file.path)], text: context.l10n.reportFileName),
-            ),
+          elevation: 2,
+          shadowColor: Colors.black12,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          margin: EdgeInsets.zero,
+          child: InkWell(
             onTap: () => _previewReport(file.path, fileName),
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isPdf 
+                          ? [Theme.of(context).colorScheme.errorContainer, Theme.of(context).colorScheme.errorContainer.withOpacity(0.5)]
+                          : [Theme.of(context).primaryColor.withOpacity(0.1), Theme.of(context).primaryColor.withOpacity(0.05)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      isPdf ? Icons.picture_as_pdf_rounded : Icons.table_chart_rounded,
+                      color: isPdf ? Theme.of(context).colorScheme.error : Theme.of(context).primaryColor,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(fileName, style: AppTextStyles.body2.copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Text(
+                          isPdf ? 'PDF Document' : 'Spreadsheet',
+                          style: AppTextStyles.caption.copyWith(color: Theme.of(context).hintColor),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.share_rounded, color: Theme.of(context).primaryColor, size: 22),
+                      onPressed: () => Share.shareXFiles([XFile(file.path)], text: context.l10n.reportFileName),
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        );
+        ).animate().fadeIn(duration: 400.ms, delay: (index * 100).ms).slideX(begin: 0.05, end: 0);
       },
     );
   }
@@ -408,8 +568,8 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
   Future<void> _exportWithOptions(String format) async {
     final filter = await showReportFilterDialog(context);
     if (!mounted) return;
-    if (filter == null) return;
-
+    // We can proceed even if filter is null (default 30 days)
+    
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.exportingFormat, maxLines: 1, overflow: TextOverflow.ellipsis)));
 
     try {
@@ -455,9 +615,46 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
     await Share.share(context.l10n.dailyAttendanceRate, subject: context.l10n.schoolReport);
   }
 
-  Future<Map<String, dynamic>> _collectReportData(AttendanceDatabase db, ReportFilter filter) async {
-    // جمع البيانات حسب الفلترة
-    return {'students': [], 'attendance': []};
+  Future<Map<String, dynamic>> _collectReportData(AttendanceDatabase db, ReportFilter? filter) async {
+    final students = await (db.select(db.attStudents)..where((s) => s.isActive.equals(true))).get();
+    
+    // إذا كان هناك فلتر للصف أو الشعبة يمكننا تصفية الطلاب هنا
+    var filteredStudents = students;
+    if (filter != null) {
+      if (filter.classId != null && filter.classId!.isNotEmpty) {
+        filteredStudents = filteredStudents.where((s) => '${s.grade} - ${s.section}' == filter.classId).toList();
+      }
+    }
+
+    final dateRange = filter?.dateRange;
+    var start = DateTime.now().subtract(const Duration(days: 30));
+    var end = DateTime.now();
+    if (dateRange != null) {
+      start = dateRange.start;
+      end = dateRange.end;
+    } else {
+      start = DateTime(start.year, start.month, start.day);
+      end = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    }
+
+    // جلب الجلسات في هذا النطاق الزمني
+    final sessions = await (db.select(db.attSessions)
+          ..where((s) => s.date.isBetweenValues(start, end)))
+        .get();
+
+    final sessionIds = sessions.map((s) => s.id).toList();
+    List<AttRecord> attendanceRecords = [];
+    if (sessionIds.isNotEmpty) {
+      attendanceRecords = await (db.select(db.attRecords)
+            ..where((r) => r.sessionId.isIn(sessionIds)))
+          .get();
+    }
+
+    return {
+      'students': filteredStudents,
+      'attendance': attendanceRecords,
+      'sessions': sessions,
+    };
   }
 
   /// 👤 اختيار طالب محدد وفتح تقريره
@@ -494,6 +691,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateBuilder) {
           return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
             title: Text(context.l10n.compareReport, maxLines: 1, overflow: TextOverflow.ellipsis),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -569,6 +767,7 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateBuilder) {
           return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
             title: Text(context.l10n.sectionsReport, maxLines: 1, overflow: TextOverflow.ellipsis),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -620,7 +819,10 @@ class _ReportsHomeScreenState extends ConsumerState<ReportsHomeScreen> {
     return FloatingActionButton.extended(
       onPressed: () => _showAdvancedFilterDialog(),
       icon: const Icon(Icons.tune),
-      label: Text(context.l10n.missingSchoolSettings, maxLines: 1, overflow: TextOverflow.ellipsis),
+      label: Text(context.l10n.advancedFilter, maxLines: 1, overflow: TextOverflow.ellipsis),
+      backgroundColor: AppColors.primary,
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
     );
   }
 }
@@ -647,7 +849,6 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
   List<String> _grades = [];
   List<String> _subjects = [];
   List<String> _teachers = [];
-  List<AttStudent> _allStudents = [];
   bool _isLoadingData = true;
 
   @override
@@ -683,7 +884,6 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
 
     if (mounted) {
       setState(() {
-        _allStudents = students;
         _grades = grades;
         _subjects = subjects;
         _teachers = teachers;
@@ -695,6 +895,7 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: Row(
         children: [
           const Icon(Icons.tune, color: AppColors.primary),
@@ -750,7 +951,7 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
                         isDense: true,
                       ),
                       items: [
-                        DropdownMenuItem(value: null, child: Text(context.l10n.invalidEmail, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: null, child: Text(context.l10n.all, maxLines: 1, overflow: TextOverflow.ellipsis)),
                         ..._grades.map((g) => DropdownMenuItem(value: g, child: Text(g, maxLines: 1, overflow: TextOverflow.ellipsis))),
                       ],
                       onChanged: (v) => setState(() => _selectedClass = v),
@@ -767,7 +968,7 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
                         isDense: true,
                       ),
                       items: [
-                        DropdownMenuItem(value: null, child: Text(context.l10n.invalidEmail, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        DropdownMenuItem(value: null, child: Text(context.l10n.all, maxLines: 1, overflow: TextOverflow.ellipsis)),
                         ..._subjects.map((s) => DropdownMenuItem(value: s, child: Text(s, maxLines: 1, overflow: TextOverflow.ellipsis))),
                       ],
                       onChanged: (v) => setState(() => _selectedSubject = v),
@@ -779,13 +980,13 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
                       DropdownButtonFormField<String>(
                         value: _selectedTeacher,
                         decoration: InputDecoration(
-                          labelText: context.l10n.help,
+                          labelText: context.l10n.teacherLabel,
                           prefixIcon: Icon(Icons.person),
                           border: OutlineInputBorder(),
                           isDense: true,
                         ),
                         items: [
-                          DropdownMenuItem(value: null, child: Text(context.l10n.invalidEmail, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          DropdownMenuItem(value: null, child: Text(context.l10n.all, maxLines: 1, overflow: TextOverflow.ellipsis)),
                           ..._teachers.map((t) => DropdownMenuItem(value: t, child: Text(t, maxLines: 1, overflow: TextOverflow.ellipsis))),
                         ],
                         onChanged: (v) => setState(() => _selectedTeacher = v),
@@ -795,14 +996,14 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Row(
                           children: [
                             Icon(Icons.person, color: Colors.grey.shade400),
                             const SizedBox(width: 8),
-                            Text(context.l10n.noSessions, style: TextStyle(color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text(context.l10n.noTeachersFound, style: TextStyle(color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
                           ],
                         ),
                       ),
@@ -820,7 +1021,7 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
               _selectedTeacher = null;
             });
           },
-          child: Text(context.l10n.verifyEmail, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(context.l10n.reset, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
         TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel, maxLines: 1, overflow: TextOverflow.ellipsis)),
         ElevatedButton(
@@ -846,27 +1047,57 @@ class _ReportFilterDialogState extends ConsumerState<ReportFilterDialog> {
 // مكونات مساعدة محسنة (StatItem, ReportTypeCard, SectionHeader)
 // ============================================================================
 
-class _StatItem extends StatelessWidget {
-  final String label;
+class _MiniStatCard extends StatelessWidget {
+  final String title;
   final String value;
   final IconData icon;
   final Color color;
 
-  const _StatItem({required this.label, required this.value, required this.icon, required this.color});
+  const _MiniStatCard({required this.title, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, color: color, size: 22),
-        ),
-        const SizedBox(height: 6),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              Expanded(
+                child: Text(
+                  value,
+                  style: AppTextStyles.headline4.copyWith(fontWeight: FontWeight.w900, fontSize: 22, color: Theme.of(context).textTheme.bodyLarge?.color),
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(title, style: AppTextStyles.caption.copyWith(color: Theme.of(context).hintColor, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
     );
   }
 }
@@ -883,25 +1114,36 @@ class ReportTypeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 4,
+      shadowColor: color.withOpacity(0.3),
+      color: color.withOpacity(0.06),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: BorderSide(color: color.withOpacity(0.25), width: 1.2),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
+        splashColor: color.withOpacity(0.15),
+        highlightColor: color.withOpacity(0.05),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: color, size: 28),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color.withOpacity(0.85), color], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                ),
+                child: Icon(icon, color: Colors.white, size: 28),
               ),
-              const SizedBox(height: 12),
-              Text(title, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 4),
-              Text(description, style: AppTextStyles.caption.copyWith(color: Colors.grey.shade600), maxLines: 2, overflow: TextOverflow.ellipsis),
+              const Spacer(),
+              Text(title, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w800, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 8),
+              Text(description, style: AppTextStyles.caption.copyWith(color: Theme.of(context).hintColor, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
             ],
           ),
         ),
@@ -922,8 +1164,13 @@ class SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-        if (actionLabel != null) TextButton(onPressed: onAction, child: Text(actionLabel!, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        Text(title, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700, fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis),
+        if (actionLabel != null)
+          TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).primaryColor),
+            child: Text(actionLabel!, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
       ],
     );
   }
@@ -937,6 +1184,7 @@ class _ComparativeResultDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: Text(context.l10n.comparisonResults, maxLines: 1, overflow: TextOverflow.ellipsis),
       content: SizedBox(
         width: 300,
@@ -968,6 +1216,7 @@ class _ClassDetailedResultDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       title: Text(context.l10n.attendanceRateGrade, maxLines: 1, overflow: TextOverflow.ellipsis),
       content: SizedBox(
         width: 300,
@@ -988,6 +1237,63 @@ class _ClassDetailedResultDialog extends StatelessWidget {
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.dismiss, maxLines: 1, overflow: TextOverflow.ellipsis)),
       ],
+    );
+  }
+}
+
+class _QuickActionBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionBtn({required this.label, required this.icon, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.12), color.withOpacity(0.03)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        border: Border.all(color: color.withOpacity(0.35), width: 1.2),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          splashColor: color.withOpacity(0.15),
+          highlightColor: color.withOpacity(0.05),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: color.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6))],
+                  ),
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  label,
+                  style: AppTextStyles.subtitle2.copyWith(fontWeight: FontWeight.w800, color: color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
